@@ -138,9 +138,13 @@
                 <form id="module-admin-form" style="display: flex; gap: 10px; align-items: flex-end;">
                     <input type="hidden" id="admin-module-id">
                     <div class="form-group" style="flex: 2; margin-bottom:0; position: relative;">
-                        <label>Nombre</label>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <label style="margin-bottom: 0;">Nombre</label>
+                            <button type="button" id="btn-suggest-module" style="background: #f5f3ff; border: 1px solid #ddd6fe; color: #8b5cf6; padding: 2px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;">
+                                Generar icono con IA ✨
+                            </button>
+                        </div>
                         <input type="text" id="admin-module-name" required placeholder="Ej: Facturación">
-                        <button type="button" id="btn-suggest-module" title="Sugerir icono y color con IA" style="position: absolute; right: 8px; top: 32px; background: none; border: none; cursor: pointer; font-size: 1.2rem;">✨</button>
                     </div>
                     <div class="form-group" style="flex: 1; margin-bottom:0;">
                         <label>Icono</label>

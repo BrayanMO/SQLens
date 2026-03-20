@@ -21,8 +21,8 @@ const createQuery = async (data) => {
     if (error.message.includes('codificación') || error.code === '22021') {
       console.warn('Encoding error in query. Sanitizing...');
       // Strip non-ASCII characters as a last resort
-      const sanitize = (str) => str.replace(/[^\x00-\x7F]/g, '');
-      const safeValues = [sanitize(title), sql_query, sanitize(context), cleanTags.map(sanitize), module || 'otros'];
+      const sanitize = (str) => (typeof str === 'string' ? str.replace(/[^\x00-\x7F]/g, '') : str);
+      const safeValues = [sanitize(title), sql_query, sanitize(context), cleanTags.map(sanitize), module || 'otros', sanitize(dev)];
       return await db.query(text, safeValues);
     }
     throw error;
@@ -82,7 +82,7 @@ const deleteQuery = async (id) => {
  * Updates an existing query record
  */
 const updateQuery = async (id, data) => {
-  const { title, sql_query, context, tags, module } = data;
+  const { title, sql_query, context, tags, module, dev } = data;
   
   const fields = [];
   const values = [];

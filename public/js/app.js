@@ -160,9 +160,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         moduleFilters.innerHTML = `<li class="${currentFilter === 'all' ? 'active' : ''}" data-module="all"><span class="icon">📊</span> Todos</li>`;
         allModules.forEach(m => {
             const li = document.createElement('li');
-            li.className = currentFilter === m.name ? 'active' : '';
+            const isActive = currentFilter === m.name;
+            li.className = isActive ? 'active' : '';
             li.dataset.module = m.name;
-            li.innerHTML = `<span class="icon">${decodeIcon(m.icon)}</span> ${m.name.charAt(0).toUpperCase() + m.name.slice(1)}`;
+            
+            // Si está activo, aplicamos una sutil sombra o borde del color del módulo
+            if (isActive) {
+                li.style.borderRight = `4px solid ${m.color}`;
+                li.style.background = `${m.color}10`;
+            }
+
+            li.innerHTML = `<span class="icon" style="background: ${m.color}15; color: ${m.color}; border-radius: 6px; padding: 4px; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; font-size: 1rem;">${decodeIcon(m.icon)}</span> ${m.name.charAt(0).toUpperCase() + m.name.slice(1)}`;
             moduleFilters.appendChild(li);
         });
     }

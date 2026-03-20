@@ -58,8 +58,8 @@ const generateAISqlSuggestion = async (userInput, schemaContext = '') => {
       module: parsed.module || 'otros'
     };
   } catch (error) {
-    console.error('AI Service Error:', error);
-    const aiError = new Error('Failed to generate AI suggestion');
+    console.error('AI Service Error:', error.message);
+    const aiError = new Error(`Failed to generate AI suggestion: ${error.message}`);
     aiError.status = 503; 
     aiError.details = error.message;
     throw aiError;
@@ -116,8 +116,8 @@ Raw SQL Query:
       module: parsed.module || 'otros'
     };
   } catch (error) {
-    console.error('AI Metadata Error:', error);
-    const aiError = new Error('Failed to generate metadata');
+    console.error('AI Metadata Error:', error.message);
+    const aiError = new Error(`Failed to generate metadata: ${error.message}`);
     aiError.status = 503; 
     throw aiError;
   }
