@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQLens - Query Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- Marked.js for AI Chat Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <!-- Background elements for glassmorphism Glow -->
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <div class="bg-shape shape-3"></div>
+
+    <div class="app-container">
+        <!-- Sidebar / Navigation -->
+        <aside class="sidebar glass-panel">
+            <div class="logo">
+                <span class="icon">🔍</span>
+                <h1>SQLens</h1>
+            </div>
+            <button id="btn-new-query" class="btn primary glowing-btn" style="width: 100%;">
+                <span class="icon">✨</span> Nueva Query
+            </button>
+            <nav style="margin-top: 20px;">
+                <ul id="module-filters">
+                    <li class="active" data-module="all"><span class="icon">📊</span> Todos</li>
+                    <!-- Modules injected here -->
+                </ul>
+            </nav>
+            <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                <button id="btn-admin-modules" class="btn text-btn" style="width: 100%; justify-content: flex-start;">
+                    <span class="icon">⚙️</span> Configuración
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="top-header glass-panel">
+                <div class="search-bar">
+                    <span class="icon search-icon">🔎</span>
+                    <input type="text" id="searchInput" placeholder="Buscar por título, contexto, tags o módulo...">
+                    <button class="btn secondary" id="btn-smart-fallback" title="Buscar con IA si no hay resultados">🪄 Buscar con IA</button>
+                    <button class="btn text-btn" id="btn-clear-search" style="display:none;" onclick="loadQueries(); document.getElementById('searchInput').value='';">✖</button>
+                </div>
+            </header>
+
+            <section class="content-area" id="queries-container">
+                <!-- Queries will be injected here via JS -->
+                <div class="loader-container" id="main-loader"><div class="spinner"></div></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal for New Query -->
+    <div class="modal-overlay" id="query-modal">
+        <div class="modal glass-panel">
+            <div class="modal-header">
+                <h2 id="modal-title">Guardar Query</h2>
+                <button class="close-btn" id="btn-close-modal">&times;</button>
+            </div>
+            <form id="query-form">
+                <input type="hidden" id="query-id">
+                <div style="display: flex; gap: 15px; align-items: flex-end;">
+                    <div class="form-group" style="flex: 2;">
+                        <label for="title">Título</label>
+                        <input type="text" id="title" required placeholder="Ej: Buscar sesiones bloqueadas">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="module">Módulo</label>
+                        <select id="module" required name="module">
+                            <!-- Modules injected here -->
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 0.5;">
+                        <label for="dev">Dev Author</label>
+                        <input type="text" id="dev" placeholder="Autor">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="context">Contexto / Explicación</label>
+                    <textarea id="context" required rows="3" placeholder="¿Para qué sirve esta query?"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="sql_query">Código SQL</label>
+                    <textarea id="sql_query" required rows="6" class="code-font" placeholder="SELECT * FROM..."></textarea>
+                    <button type="button" id="btn-auto-metadata" class="btn secondary btn-sm" style="margin-top: 8px;">✨ Autocompletar con IA</button>
+                </div>
+                <div class="form-group">
+                    <label for="tags">Etiquetas (separadas por coma)</label>
+                    <input type="text" id="tags" placeholder="users, admin, bugs">
+                </div>
+                <div class="form-actions">
+                    <div id="modal-error" class="error-msg"></div>
+                    <button type="button" class="btn text-btn" id="btn-cancel-modal">Cancelar</button>
+                    <button type="submit" class="btn primary" id="btn-save-query">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Smart Search Results (AI) -->
+    <div class="modal-overlay" id="smart-search-modal">
+        <div class="modal glass-panel ai-modal" style="width: 800px;">
+            <div class="modal-header">
+                <h2>🧠 Sugerencia Inteligente (IA)</h2>
+                <button class="close-btn" id="btn-close-ai-modal">&times;</button>
+            </div>
+            <div class="ai-content">
+                <div class="ai-warning" id="ai-warnings">Generado por IA. Verifica antes de usar.</div>
+                <div class="ai-explanation" id="ai-explanation" style="font-size: 1.05rem;">...</div>
+                <div class="code-wrapper" style="margin-top: 20px;">
+                    <button class="copy-btn btn-sm" id="btn-copy-ai">Copiar</button>
+                    <pre><code id="ai-sql-code" class="code-font" style="min-height: 100px;"></code></pre>
+                </div>
+            </div>
+            <div class="form-actions mt-15" style="margin-top: 25px;">
+                <button type="button" class="btn text-btn" onclick="document.getElementById('smart-search-modal').classList.remove('active')">Cerrar</button>
+                <button class="btn primary glowing-btn" id="btn-save-ai-query">Mandar a Editor y Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Admin Modules -->
+    <div class="modal-overlay" id="admin-modules-modal">
+        <div class="modal glass-panel" style="width: 700px;">
+            <div class="modal-header">
+                <h2>⚙️ Gestión de Módulos</h2>
+                <button class="close-btn" id="btn-close-admin-modal">&times;</button>
+            </div>
+            
+            <div class="admin-module-form" style="background: var(--input-bg); padding: 20px; border-radius: 12px; margin-bottom: 30px;">
+                <h3 style="margin-bottom: 15px; font-size: 1rem;">Agregar / Editar Módulo</h3>
+                <form id="module-admin-form" style="display: flex; gap: 10px; align-items: flex-end;">
+                    <input type="hidden" id="admin-module-id">
+                    <div class="form-group" style="flex: 2; margin-bottom:0; position: relative;">
+                        <label>Nombre</label>
+                        <input type="text" id="admin-module-name" required placeholder="Ej: Facturación">
+                        <button type="button" id="btn-suggest-module" title="Sugerir icono y color con IA" style="position: absolute; right: 8px; top: 32px; background: none; border: none; cursor: pointer; font-size: 1.2rem;">✨</button>
+                    </div>
+                    <div class="form-group" style="flex: 1; margin-bottom:0;">
+                        <label>Icono</label>
+                        <input type="text" id="admin-module-icon" placeholder="Emoji o Icono" value="📁">
+                    </div>
+                    <div class="form-group" style="flex: 1; margin-bottom:0;">
+                        <label>Color</label>
+                        <input type="color" id="admin-module-color" value="#475569" style="height: 45px; padding: 2px;">
+                    </div>
+                    <button type="submit" class="btn primary" id="btn-save-module">Guardar</button>
+                </form>
+            </div>
+
+            <div class="modules-list" id="admin-modules-list" style="display: flex; flex-direction: column; gap: 10px;">
+                <!-- Modules list injected here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de Confirmación -->
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="modal glass-panel" style="width: 400px; text-align: center; padding: 40px;">
+            <div style="font-size: 3rem; margin-bottom: 20px;">⚠️</div>
+            <h3 id="confirm-modal-title" style="margin-bottom: 15px; font-size: 1.5rem;">¿Estás seguro?</h3>
+            <p id="confirm-modal-message" style="color: var(--text-secondary); margin-bottom: 30px; font-size: 1rem;">Esta acción no se puede deshacer y se borrará permanentemente.</p>
+            <div style="display: flex; justify-content: center; gap: 15px;">
+                <button type="button" class="btn text-btn" id="btn-confirm-cancel" style="padding: 10px 25px;">Cancelar</button>
+                <button type="button" class="btn danger glowing-btn" id="btn-confirm-ok" style="padding: 10px 25px;">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Chat Bubble -->
+    <div id="ai-chat-container">
+        <button id="chat-toggle-btn" class="glowing-btn">
+            <span class="chat-icon">💬</span>
+        </button>
+        <div id="chat-window" class="glass-panel">
+            <div class="chat-header">
+                <h3>🧠 SQLens Assistant</h3>
+                <button id="close-chat">&times;</button>
+            </div>
+            <div id="chat-messages">
+                <div class="message assistant">¡Hola! Soy tu asistente SQLens. ¿En qué puedo ayudarte hoy?</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Escribe tu duda aquí...">
+                <button id="send-chat-btn">🚀</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Application -->
+    <script src="/js/app.js"></script>
+</body>
+</html>
