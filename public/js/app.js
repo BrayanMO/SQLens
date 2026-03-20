@@ -353,6 +353,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     chatToggleBtn.addEventListener('click', () => chatWindow.classList.toggle('active'));
     closeChat.addEventListener('click', () => chatWindow.classList.remove('active'));
 
+    // Draggable Chat Logic
+    let isDragging = false;
+    let startX, startY;
+    const chatHeader = document.querySelector('.chat-header');
+
+    chatHeader.addEventListener('mousedown', (e) => {
+        if (e.target.tagName === 'BUTTON') return;
+        isDragging = true;
+        startX = e.clientX - chatWindow.offsetLeft;
+        startY = e.clientY - chatWindow.offsetTop;
+        chatWindow.style.transition = 'none';
+        chatWindow.style.userSelect = 'none';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        chatWindow.style.left = (e.clientX - startX) + 'px';
+        chatWindow.style.top = (e.clientY - startY) + 'px';
+        chatWindow.style.bottom = 'auto';
+        chatWindow.style.right = 'auto';
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isDragging) {
+            isDragging = false;
+            chatWindow.style.transition = 'opacity 0.3s, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            chatWindow.style.userSelect = 'auto';
+        }
+    });
+
     const handleSendMessage = async () => {
         const msg = chatInput.value.trim();
         if (!msg) return;
@@ -372,7 +402,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     };
     sendChatBtn.addEventListener('click', handleSendMessage);
-    chatInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleSendMessage());
+    const adjustChatInputHeight = () => {
+        chatInput.style.height = 'auto';
+        chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+    };
+
+    chatInput.addEventListener('input', adjustChatInputHeight);
+
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSendMessage();
+            chatInput.style.height = 'auto';
+        }
+    });
 
     const btnSuggestModule = document.getElementById('btn-suggest-module');
     if (btnSuggestModule) {

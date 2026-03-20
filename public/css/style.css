@@ -600,22 +600,43 @@ nav li.active::after {
 }
 
 #chat-window {
-    position: absolute;
+    position: fixed;
     bottom: 80px;
-    right: 0;
-    width: 350px;
-    height: 500px;
+    right: 20px;
+    width: 380px;
+    height: 520px;
     display: flex;
     flex-direction: column;
-    border-radius: 20px;
+    border-radius: 12px;
     overflow: hidden;
     transform: scale(0.8) translateY(20px);
     opacity: 0;
     pointer-events: none;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    background: rgba(255, 255, 255, 0.95);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    transition: opacity 0.3s, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
     backdrop-filter: blur(10px);
+    resize: both;
+    min-width: 300px;
+    min-height: 400px;
+    z-index: 1000;
+}
+
+#chat-window.active {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: all;
+}
+
+.chat-header {
+    background: linear-gradient(135deg, var(--accent-blue), #8b5cf6);
+    padding: 15px 20px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: move;
+    user-select: none;
 }
 
 #chat-window.active {
@@ -686,8 +707,19 @@ nav li.active::after {
     flex: 1;
     border: 1px solid var(--border-color);
     border-radius: 10px;
-    padding: 8px 12px;
+    padding: 10px 12px;
     font-size: 0.9rem;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    max-height: 120px;
+    transition: all 0.2s;
+    line-height: 1.4;
+}
+
+#chat-input:focus {
+    border-color: var(--accent-blue);
+    background: #f8fafc;
 }
 
 #send-chat-btn {

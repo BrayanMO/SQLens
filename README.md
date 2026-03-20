@@ -1,44 +1,73 @@
-# SQLens MVP
+# SQLens 🔍✨
 
-A REST API for Support Level 3 analysts to store, search, and reuse SQL queries during incident troubleshooting.
+**SQLens** es una plataforma inteligente diseñada para analistas de soporte Nivel 3. Permite almacenar, buscar y organizar consultas SQL críticas de forma eficiente, potenciada por Inteligencia Artificial para generar sugerencias cuando no se encuentran resultados exactos.
 
-## 🚀 Deployment Instructions
+---
 
-### 1. Database Setup (Neon)
-1. Log into your [Neon](https://neon.tech/) account.
-2. Create a new project.
-3. Obtain the connection string from the Neon dashboard.
-4. Connect to your database using a tool like pgAdmin, DBeaver, or `psql` and execute the contents of `schema.sql` to create the required tables and indexes.
+## 🛠️ Tecnologías Usadas
 
-### 2. Hosting Web Service (Render)
-1. Create a free account on [Render](https://render.com/).
-2. Create a new "Web Service".
-3. Connect your GitHub repository containing this project.
-4. Set the following details:
-   - **Environment**: Node
-   - **Build Command**: `npm install`
-   - **Start Command**: `npm start`
-5. Go to "Environment Variables" and set the following:
-   - `DATABASE_URL`: Your Neon connection string (add `?sslmode=require` if not present)
-   - `OPENROUTER_API_KEY`: Your OpenRouter API key.
-   - `NODE_ENV`: `production`
-6. Click "Create Web Service" and wait for the auto-deployment to finish.
+- **Frontend**: HTML5, CSS3 (Diseño Glassmorphism Premium), JavaScript Vanilla.
+- **Backend**: Node.js & Express.
+- **Base de Datos**: PostgreSQL (Soporta Neon.tech y despliegues serverless).
+- **IA**: OpenRouter API (Integración con modelos de lenguaje avanzados).
+- **Seguridad**: Helmet, CORS y validación de esquemas con Joi.
 
-### 3. Verification
+---
 
-Once deployed, verify the API health by running the following `curl` command (replace `<YOUR_RENDER_URL>` with your actual Render URL):
+## 🚀 Requisitos Previos
 
-```bash
-curl -X GET https://<YOUR_RENDER_URL>/health
-```
+1. **Node.js**: Versión 18 o superior.
+2. **PostgreSQL**: Una instancia local o en la nube (ej: [Neon.tech](https://neon.tech)).
+3. **OpenRouter API Key**: Para las funcionalidades de IA.
 
-**Expected output:**
-```json
-{
-  "success": true,
-  "data": {
-    "status": "ok",
-    "db": "connected"
-  }
-}
-```
+---
+
+## ⚙️ Instalación Local
+
+1. **Clonar el repositorio**:
+   ```bash
+   git clone <url-del-repo>
+   cd SQLens
+   ```
+
+2. **Instalar dependencias**:
+   ```bash
+   npm install
+   ```
+
+3. **Configurar variables de entorno**:
+   Crea un archivo `.env` en la raíz con lo siguiente:
+   ```env
+   PORT=3000
+   DATABASE_URL=postgresql://usuario:password@localhost:5432/sqlens
+   OPENROUTER_API_KEY=tu_api_key_aqui
+   AI_MODEL=google/gemini-2.0-flash-exp:free
+   ```
+
+4. **Inicializar base de datos**:
+   Ejecuta el script de migración inicial para crear las tablas y módulos base:
+   ```bash
+   node migrate_modules.js
+   ```
+
+5. **Lanzar la aplicación**:
+   ```bash
+   npm run dev
+   ```
+   Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
+
+---
+
+## 📖 Guía Rápida de Uso
+
+1. **Búsqueda Inteligente**: Escribe tu problema (ej: "consultar pedidos bloqueados"). Si la query no existe, la IA generará una para ti basada en el contexto de tu base de datos.
+2. **Gestión de Módulos**: Usa el botón ⚙️ para crear categorías personalizadas con iconos y colores sugeridos por IA.
+3. **Firma de Autor**: Al guardar una query, añade tu nombre en el campo **Dev Author** para trazabilidad.
+4. **Confirmación Segura**: SQLens incluye diálogos de confirmación premium antes de cualquier eliminación permanente.
+
+---
+
+## 🌐 Despliegue en Producción
+
+Recomendamos **Render.com** para el servidor y **Neon.tech** para la base de datos.
+> Consulta la [Guía de Despliegue Detallada](./brain/deployment_guide.md) para más información.
