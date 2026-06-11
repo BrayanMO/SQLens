@@ -733,6 +733,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
+    const btnLogout = document.getElementById('btn-logout');
+    if (btnLogout) {
+        btnLogout.addEventListener('click', () => {
+            localStorage.removeItem('sqlens_token');
+            window.location.href = '/login.html';
+        });
+    }
+
     window.copyToClipboard = (el) => { navigator.clipboard.writeText(el.nextElementSibling.textContent); el.textContent = '¡Copiado!'; setTimeout(() => el.textContent = 'Copiar', 2000); };
     window.deleteQuery = async (id) => { 
         if (await showConfirm('¿Eliminar Query?', 'Esta consulta se borrará permanentemente de tu repositorio.')) { 
