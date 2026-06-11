@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS queries (
   context    TEXT NOT NULL,
   tags       TEXT[] DEFAULT '{}',
   type       TEXT DEFAULT 'sql',
+  is_favorite BOOLEAN DEFAULT false,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

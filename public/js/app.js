@@ -158,6 +158,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         queriesContainer.innerHTML = '';
         
         const filtered = queries.filter(q => {
+            if (currentFilterType === 'favorites') return q.is_favorite;
             const matchType = currentFilterType === 'all' || q.type === currentFilterType;
             const matchModule = currentFilterModule === 'all' || q.module === currentFilterModule;
             return matchType && matchModule;
@@ -171,7 +172,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             const mData = allModules.find(m => m.name === q.module) || { color: '#64748b', icon: '📁' };
             const typeIcons = { sql: '🗄️', prompt: '✨', note: '📝' };
             const tIcon = typeIcons[q.type] || '🗄️';
+            const isFav = q.is_favorite ? '⭐' : '☆';
             
+            let contentHtml = '';
+            if (q.type === 'note') {
+                contentHtml = `<div class="markdown-body" style="padding: 15px; background: var(--bg-light); border-radius: 8px; border: 1px solid var(--border-color); font-size: 0.95rem;">${marked.parse(q.sql_query)}</div>`;
+            } else {
+                const lang = q.type === 'sql' ? 'language-sql' : 'language-markdown';
+                contentHtml = `
+                <div class="code-wrapper">
+                    <button class="copy-btn btn-sm" data-action="copy">Copiar</button>
+                    <pre class="${q.sql_query.length > 250 ? 'collapsed' : ''}"><code class="code-font ${lang}">${escapeHtml(q.sql_query)}</code></pre>
+                    ${q.sql_query.length > 250 ? '<button class="toggle-btn" data-action="toggle">Ver más</button>' : ''}
+                </div>`;
+            }
+
             const card = document.createElement('div');
             card.className = 'query-card';
             card.innerHTML = `
@@ -180,16 +195,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <span class="module-badge" style="background: ${mData.color}20; color: ${mData.color}; border: 1px solid ${mData.color}40; width: fit-content;">${decodeIcon(mData.icon)} ${q.module}</span>
                         <h3 class="card-title">${tIcon} ${escapeHtml(q.title)}</h3>
                     </div>
-                    <span class="card-date">${formatDate(q.created_at)}</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span class="card-date">${formatDate(q.created_at)}</span>
+                        <button class="btn-fav" data-action="favorite" data-id="${q.id}" title="Favorito">${isFav}</button>
+                    </div>
                 </div>
                 <div class="card-context">${escapeHtml(q.context)}</div>
                 ${q.dev ? `<div class="card-author">${escapeHtml(q.dev)}</div>` : ''}
                 <div class="card-tags">${(q.tags || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>
-                <div class="code-wrapper">
-                    <button class="copy-btn btn-sm" data-action="copy">Copiar</button>
-                    <pre><code class="code-font ${q.sql_query.length > 250 ? 'collapsed' : ''}">${escapeHtml(q.sql_query)}</code></pre>
-                    ${q.sql_query.length > 250 ? '<button class="toggle-btn" data-action="toggle">Ver más</button>' : ''}
-                </div>
+                ${contentHtml}
                 <div class="card-actions">
                     <button class="btn secondary btn-sm" data-action="edit" data-id="${q.id}">Editar</button>
                     <button class="btn danger btn-sm" data-action="delete" data-id="${q.id}">Eliminar</button>
@@ -197,6 +211,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             `;
             queriesContainer.appendChild(card);
         });
+        
+        // Highlight syntax
+        if (window.Prism) {
+            Prism.highlightAllUnder(queriesContainer);
+        }
     }
 
     function renderModuleFilters() {
@@ -290,17 +309,35 @@ document.addEventListener('DOMContentLoaded', async () => {
                 renderQueries(allQueries);
             });
         }
+        
+        // Event listener for "Favoritos" button
+        const btnFav = document.getElementById('btn-filter-favorites');
+        if (btnFav) {
+            btnFav.addEventListener('click', () => {
+                currentFilterType = 'favorites';
+                currentFilterModule = 'all';
+                document.querySelectorAll('.accordion-group').forEach(g => g.classList.remove('open'));
+                updateSidebarActiveStates();
+                renderQueries(allQueries);
+            });
+        }
         updateSidebarActiveStates();
     }
 
     function updateSidebarActiveStates() {
         const btnAll = document.getElementById('btn-filter-all');
+        const btnFav = document.getElementById('btn-filter-favorites');
+        
         if (btnAll) {
             if (currentFilterType === 'all') btnAll.classList.add('active');
             else btnAll.classList.remove('active');
         }
+        if (btnFav) {
+            if (currentFilterType === 'favorites') btnFav.classList.add('active');
+            else btnFav.classList.remove('active');
+        }
 
-        document.querySelectorAll('.accordion-header:not(#btn-filter-all)').forEach(header => {
+        document.querySelectorAll('.accordion-header:not(#btn-filter-all):not(#btn-filter-favorites)').forEach(header => {
             const groupDiv = header.closest('.accordion-group');
             const groupId = groupDiv.querySelector('li') ? groupDiv.querySelector('li').dataset.type : '';
             if (currentFilterType === groupId && currentFilterModule === 'all') {
@@ -505,16 +542,34 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 
-    queriesContainer.addEventListener('click', (e) => {
+    queriesContainer.addEventListener('click', async (e) => {
         if (e.target.matches('[data-action="copy"]')) window.copyToClipboard(e.target);
         else if (e.target.matches('[data-action="delete"]')) window.deleteQuery(e.target.dataset.id);
+        else if (e.target.closest('[data-action="favorite"]')) {
+            const btn = e.target.closest('[data-action="favorite"]');
+            const q = allQueries.find(item => item.id == btn.dataset.id);
+            if (q) {
+                // Optimistic UI update
+                q.is_favorite = !q.is_favorite;
+                btn.textContent = q.is_favorite ? '⭐' : '☆';
+                try {
+                    await fetch(`${API_URL}queries/${q.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ is_favorite: q.is_favorite })
+                    });
+                } catch (err) {}
+            }
+        }
         else if (e.target.matches('[data-action="edit"]')) {
             const q = allQueries.find(item => item.id == e.target.dataset.id);
             if (q) openModal(q, true);
         } else if (e.target.matches('[data-action="toggle"]')) {
-            const code = e.target.parentElement.querySelector('code');
-            code.classList.toggle('collapsed');
-            e.target.textContent = code.classList.contains('collapsed') ? 'Ver más' : 'Ocultar';
+            const pre = e.target.parentElement.querySelector('pre');
+            if (pre) {
+                pre.classList.toggle('collapsed');
+                e.target.textContent = pre.classList.contains('collapsed') ? 'Ver más' : 'Ocultar';
+            }
         }
     });
 
@@ -738,6 +793,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnLogout.addEventListener('click', () => {
             localStorage.removeItem('sqlens_token');
             window.location.href = '/login.html';
+        });
+    }
+    
+    const btnThemeToggle = document.getElementById('btn-theme-toggle');
+    const prismLink = document.querySelector('link[href*="prism"]');
+    let isDark = localStorage.getItem('sqlens_theme') === 'dark';
+    
+    const applyTheme = (dark) => {
+        if (dark) {
+            document.body.setAttribute('data-theme', 'dark');
+            if (btnThemeToggle) btnThemeToggle.innerHTML = '<span class="icon">☀️</span> Modo Claro';
+            if (prismLink) prismLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css';
+        } else {
+            document.body.removeAttribute('data-theme');
+            if (btnThemeToggle) btnThemeToggle.innerHTML = '<span class="icon">🌙</span> Modo Oscuro';
+            if (prismLink) prismLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css';
+        }
+    };
+    
+    applyTheme(isDark);
+    
+    if (btnThemeToggle) {
+        btnThemeToggle.addEventListener('click', () => {
+            isDark = !isDark;
+            localStorage.setItem('sqlens_theme', isDark ? 'dark' : 'light');
+            applyTheme(isDark);
         });
     }
 

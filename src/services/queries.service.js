@@ -5,24 +5,24 @@ const db = require('../db/pool');
  * Creates a new query record
  */
 const createQuery = async (data) => {
-  const { title, sql_query, context, tags = [], module = 'otros', dev = '', type = 'sql' } = data;
+  const { title, sql_query, context, tags = [], module = 'otros', dev = '', type = 'sql', is_favorite = false } = data;
   
   // Clean up tags: discard empty, deduplicate, lowercase
   const cleanTags = [...new Set(tags.filter(t => t && t.trim() !== '').map(t => t.toLowerCase()))];
 
   const text = `
-    INSERT INTO queries (title, sql_query, context, tags, module, dev, type)
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    INSERT INTO queries (title, sql_query, context, tags, module, dev, type, is_favorite)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     RETURNING *;
   `;
-  const values = [title, sql_query, context, cleanTags, module || 'otros', dev, type];
+  const values = [title, sql_query, context, cleanTags, module || 'otros', dev, type, is_favorite];
   
   const result = await db.query(text, values).catch(async (error) => {
     if (error.message.includes('codificación') || error.code === '22021') {
       console.warn('Encoding error in query. Sanitizing...');
       // Strip non-ASCII characters as a last resort
       const sanitize = (str) => (typeof str === 'string' ? str.replace(/[^\x00-\x7F]/g, '') : str);
-      const safeValues = [sanitize(title), sql_query, sanitize(context), cleanTags.map(sanitize), module || 'otros', sanitize(dev), sanitize(type)];
+      const safeValues = [sanitize(title), sql_query, sanitize(context), cleanTags.map(sanitize), module || 'otros', sanitize(dev), sanitize(type), is_favorite];
       return await db.query(text, safeValues);
     }
     throw error;
@@ -36,9 +36,9 @@ const createQuery = async (data) => {
 const getQueries = async (page = 1, limit = 20) => {
   const offset = (page - 1) * limit;
   const text = `
-    SELECT id, title, sql_query, context, tags, module, dev, type, created_at
+    SELECT id, title, sql_query, context, tags, module, dev, type, is_favorite, created_at
     FROM queries
-    ORDER BY created_at DESC
+    ORDER BY is_favorite DESC, created_at DESC
     LIMIT $1 OFFSET $2;
   `;
   const values = [limit, offset];
@@ -82,7 +82,7 @@ const deleteQuery = async (id) => {
  * Updates an existing query record
  */
 const updateQuery = async (id, data) => {
-  const { title, sql_query, context, tags, module, dev, type } = data;
+  const { title, sql_query, context, tags, module, dev, type, is_favorite } = data;
   
   const fields = [];
   const values = [];
@@ -95,6 +95,7 @@ const updateQuery = async (id, data) => {
   if (module !== undefined) { fields.push(`module = $${paramIndex++}`); values.push(module); }
   if (dev !== undefined) { fields.push(`dev = $${paramIndex++}`); values.push(dev); }
   if (type !== undefined) { fields.push(`type = $${paramIndex++}`); values.push(type); }
+  if (is_favorite !== undefined) { fields.push(`is_favorite = $${paramIndex++}`); values.push(is_favorite); }
   if (tags !== undefined) {
     const cleanTags = [...new Set(tags.filter(t => t && t.trim() !== '').map(t => t.toLowerCase()))];
     fields.push(`tags = $${paramIndex++}`);

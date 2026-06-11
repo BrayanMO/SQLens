@@ -11,6 +11,19 @@
     --input-bg: #f1f5f9;
 }
 
+[data-theme="dark"] {
+    --bg-light: #1a1b26;
+    --text-primary: #c0caf5;
+    --text-secondary: #9aa5ce;
+    --accent-blue: #7aa2f7;
+    --accent-blue-hover: #2ac3de;
+    --danger: #f7768e;
+    --danger-hover: #ff9e64;
+    --surface-bg: #24283b;
+    --border-color: #414868;
+    --input-bg: #16161e;
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -368,14 +381,14 @@ nav li.active::after {
 .card-author {
     font-size: 0.8rem;
     color: var(--text-secondary);
-    background: #f1f5f9;
+    background: var(--input-bg);
     padding: 3px 10px;
     border-radius: 6px;
     display: inline-flex;
     align-items: center;
     gap: 6px;
     margin-bottom: 12px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-color);
     line-height: 1;
 }
 
@@ -391,7 +404,7 @@ nav li.active::after {
 }
 
 .tag {
-    background: #eff6ff;
+    background: var(--input-bg);
     color: var(--accent-blue);
     padding: 4px 12px;
     border-radius: 20px;
@@ -401,7 +414,7 @@ nav li.active::after {
 
 .code-wrapper {
     position: relative;
-    background: #f8fafc;
+    background: var(--bg-light);
     border-radius: 8px;
     border: 1px solid var(--border-color);
 }
@@ -419,7 +432,7 @@ nav li.active::after {
 }
 
 .code-wrapper .copy-btn:hover {
-    background: #f1f5f9;
+    background: var(--input-bg);
     color: var(--text-primary);
 }
 
@@ -427,15 +440,25 @@ nav li.active::after {
     font-family: 'Fira Code', 'Courier New', Courier, monospace;
     font-size: 0.9rem;
     padding: 16px;
-    padding-bottom: 30px; /* space for toggle btn */
     display: block;
     overflow-x: auto;
     color: #334155;
     line-height: 1.5;
+}
+
+pre[class*="language-"] {
+    background: var(--surface-bg) !important;
+    padding-bottom: 30px !important;
     transition: max-height 0.3s ease;
 }
 
-.code-font.collapsed {
+code[class*="language-"] {
+    background: var(--surface-bg) !important;
+    color: var(--text-primary) !important;
+    text-shadow: none !important;
+}
+
+pre.collapsed {
     max-height: 120px;
     overflow-y: hidden;
     mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
@@ -827,7 +850,7 @@ nav li.active::after {
     justify-content: space-between;
     align-items: center;
     padding: 12px 20px;
-    background: white;
+    background: var(--surface-bg);
     border: 1px solid var(--border-color);
     border-radius: 10px;
     margin-bottom: 8px;
@@ -908,3 +931,82 @@ nav li.active::after {
 }
 /* ------------------ */
 
+/* Favorites Button */
+.btn-fav {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-fav:hover {
+    background: var(--input-bg);
+    transform: scale(1.1);
+}
+
+/* Markdown Styling for Apuntes */
+.markdown-body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    color: var(--text-primary);
+}
+
+.markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.markdown-body p, .markdown-body blockquote, .markdown-body ul, .markdown-body ol, .markdown-body table, .markdown-body pre {
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+
+.markdown-body table {
+    display: block;
+    width: 100%;
+    overflow: auto;
+    border-spacing: 0;
+    border-collapse: collapse;
+}
+
+.markdown-body table th, .markdown-body table td {
+    padding: 6px 13px;
+    border: 1px solid var(--border-color);
+}
+
+.markdown-body table tr {
+    background-color: var(--surface-bg);
+    border-top: 1px solid var(--border-color);
+}
+
+.markdown-body table tr:nth-child(2n) {
+    background-color: var(--bg-light);
+}
+
+.markdown-body pre {
+    background-color: var(--input-bg);
+    border-radius: 6px;
+    padding: 16px;
+    overflow: auto;
+}
+
+.markdown-body code {
+    background-color: var(--input-bg);
+    border-radius: 6px;
+    padding: 0.2em 0.4em;
+    font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+    font-size: 85%;
+}
+
+.markdown-body pre code {
+    background-color: transparent;
+    padding: 0;
+}
