@@ -13,7 +13,7 @@ router.post('/login', (req, res) => {
   }
 
   // Compare with the APP_PASSWORD environment variable
-  if (password === process.env.APP_PASSWORD) {
+  if (password.trim() === (process.env.APP_PASSWORD || '').trim()) {
     // Sign a new JWT token
     const token = jwt.sign(
       { role: 'admin' }, 

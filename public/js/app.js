@@ -118,6 +118,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const adminModulesList = document.getElementById('admin-modules-list');
     const moduleAdminForm = document.getElementById('module-admin-form');
 
+    const btnPosDirectory = document.getElementById('btn-pos-directory');
+    const posModal = document.getElementById('pos-modal');
+    const btnClosePosModal = document.getElementById('btn-close-pos-modal');
+    const posListContainer = document.getElementById('pos-list-container');
+    const posAdminForm = document.getElementById('pos-admin-form');
+    const adminPosList = document.getElementById('admin-pos-list');
+    
+    let allPOs = [];
+
     // Define Functions
     async function fetchModules() {
         try {
@@ -287,8 +296,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (err) { alert('Error IA'); }
     }
 
+    async function fetchPOs() {
+        try {
+            const res = await fetch('/pos');
+            const data = await res.json();
+            if (data.success) {
+                allPOs = data.data;
+            }
+        } catch (err) { console.error('Error fetching POs:', err); }
+    }
+
     // Now call Initial load
     await fetchModules();
+    await fetchPOs();
     loadQueries();
     
     // Setup listeners
@@ -462,6 +482,66 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnAdminModules.addEventListener('click', () => { adminModulesModal.classList.add('active'); renderAdminModulesList(); });
     btnCloseAdminModal.addEventListener('click', () => { adminModulesModal.classList.remove('active'); moduleAdminForm.reset(); });
 
+    // Config Tabs Logic
+    const configTabs = document.querySelectorAll('.tab-btn');
+    const configPanes = document.querySelectorAll('.tab-pane');
+    configTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            configTabs.forEach(t => {
+                t.classList.remove('active');
+                t.style.borderBottomColor = 'transparent';
+                t.style.color = 'var(--text-secondary)';
+            });
+            configPanes.forEach(p => p.style.display = 'none');
+            
+            tab.classList.add('active');
+            tab.style.borderBottomColor = 'var(--primary-color)';
+            tab.style.color = 'var(--text-color)';
+            document.getElementById(tab.dataset.tab).style.display = 'block';
+        });
+    });
+
+    // PO Directory Logic
+    function renderPOs() {
+        posListContainer.innerHTML = allPOs.length === 0 ? '<div style="text-align:center; padding: 20px; color: var(--text-secondary);">No hay POs configurados</div>' : allPOs.map(item => `
+            <div style="background: var(--input-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color);">
+                <h3 style="margin: 0 0 5px 0; color: var(--accent-blue); font-size: 1.1rem;">${escapeHtml(item.project_name)}</h3>
+                <p style="margin: 0; color: var(--text-secondary); font-size: 0.95rem;">Responsables: <strong style="color: var(--text-primary);">${escapeHtml(item.owners)}</strong></p>
+            </div>
+        `).join('');
+    }
+
+    function renderAdminPOs() {
+        if (!adminPosList) return;
+        adminPosList.innerHTML = allPOs.map(item => `
+            <div class="module-admin-item">
+                <div class="module-info">
+                    <div class="module-icon-preview" style="background: rgba(168, 177, 255, 0.2); color: #a8b1ff">👤</div>
+                    <div><strong style="text-transform: capitalize;">${escapeHtml(item.project_name)}</strong><div style="font-size: 0.8rem; color: var(--text-secondary)">${escapeHtml(item.owners)}</div></div>
+                </div>
+                <div class="module-admin-actions">
+                    <button class="btn text-btn btn-sm" onclick="editPOInAdmin(${item.id}, '${escapeHtml(item.project_name).replace(/'/g, "\\'")}', '${escapeHtml(item.owners).replace(/'/g, "\\'")}')">Editar</button>
+                    <button class="btn text-btn btn-sm danger" onclick="deletePOInAdmin(${item.id})">Eliminar</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    btnAdminModules.addEventListener('click', () => { 
+        adminModulesModal.classList.add('active'); 
+        renderAdminModulesList(); 
+        renderAdminPOs();
+    });
+
+    btnPosDirectory.addEventListener('click', () => {
+        renderPOs();
+        posModal.classList.add('active');
+    });
+
+    btnClosePosModal.addEventListener('click', () => {
+        posModal.classList.remove('active');
+    });
+
     moduleAdminForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const id = document.getElementById('admin-module-id').value;
@@ -488,6 +568,36 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const res = await fetch(`/modules/${id}`, { method: 'DELETE' });
                 if ((await res.json()).success) { await fetchModules(); renderAdminModulesList(); }
+            } catch (err) {}
+        }
+    };
+
+    if (posAdminForm) {
+        posAdminForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('admin-pos-id').value;
+            const payload = {
+                project_name: document.getElementById('admin-pos-project').value,
+                owners: document.getElementById('admin-pos-owners').value
+            };
+            try {
+                const res = await fetch(id ? `/pos/${id}` : '/pos', { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if ((await res.json()).success) { posAdminForm.reset(); document.getElementById('admin-pos-id').value = ''; await fetchPOs(); renderAdminPOs(); }
+            } catch (err) {}
+        });
+    }
+
+    window.editPOInAdmin = (id, project_name, owners) => {
+        document.getElementById('admin-pos-id').value = id;
+        document.getElementById('admin-pos-project').value = project_name;
+        document.getElementById('admin-pos-owners').value = owners;
+    };
+
+    window.deletePOInAdmin = async (id) => {
+        if (await showConfirm('¿Eliminar PO?', 'Esta acción no se puede deshacer.')) {
+            try {
+                const res = await fetch(`/pos/${id}`, { method: 'DELETE' });
+                if ((await res.json()).success) { await fetchPOs(); renderAdminPOs(); }
             } catch (err) {}
         }
     };

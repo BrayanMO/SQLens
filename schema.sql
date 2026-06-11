@@ -10,3 +10,11 @@ CREATE TABLE IF NOT EXISTS queries (
 -- Indexes for search performance
 CREATE INDEX IF NOT EXISTS idx_queries_title   ON queries USING gin(to_tsvector('english', title));
 CREATE INDEX IF NOT EXISTS idx_queries_context ON queries USING gin(to_tsvector('english', context));
+
+CREATE TABLE IF NOT EXISTS product_owners (
+  id SERIAL PRIMARY KEY,
+  project_name TEXT NOT NULL,
+  owners TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
