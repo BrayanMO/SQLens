@@ -7,7 +7,8 @@ const createQuerySchema = Joi.object({
   context: Joi.string().max(2000).required(),
   tags: Joi.array().items(Joi.string().trim().allow('')).max(10).optional(),
   module: Joi.string().allow('', null).optional(),
-  dev: Joi.string().max(100).allow('', null).optional()
+  dev: Joi.string().max(100).allow('', null).optional(),
+  type: Joi.string().valid('sql', 'prompt', 'note').optional()
 });
 
 const updateQuerySchema = Joi.object({
@@ -16,7 +17,8 @@ const updateQuerySchema = Joi.object({
   context: Joi.string().max(2000).optional(),
   tags: Joi.array().items(Joi.string().trim().allow('')).max(10).optional(),
   module: Joi.string().allow('', null).optional(),
-  dev: Joi.string().max(100).allow('', null).optional()
+  dev: Joi.string().max(100).allow('', null).optional(),
+  type: Joi.string().valid('sql', 'prompt', 'note').optional()
 });
 
 const searchSchema = Joi.object({

@@ -5,24 +5,24 @@ const db = require('../db/pool');
  * Creates a new query record
  */
 const createQuery = async (data) => {
-  const { title, sql_query, context, tags = [], module = 'otros', dev = '' } = data;
+  const { title, sql_query, context, tags = [], module = 'otros', dev = '', type = 'sql' } = data;
   
   // Clean up tags: discard empty, deduplicate, lowercase
   const cleanTags = [...new Set(tags.filter(t => t && t.trim() !== '').map(t => t.toLowerCase()))];
 
   const text = `
-    INSERT INTO queries (title, sql_query, context, tags, module, dev)
-    VALUES ($1, $2, $3, $4, $5, $6)
+    INSERT INTO queries (title, sql_query, context, tags, module, dev, type)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
     RETURNING *;
   `;
-  const values = [title, sql_query, context, cleanTags, module || 'otros', dev];
+  const values = [title, sql_query, context, cleanTags, module || 'otros', dev, type];
   
   const result = await db.query(text, values).catch(async (error) => {
     if (error.message.includes('codificación') || error.code === '22021') {
       console.warn('Encoding error in query. Sanitizing...');
       // Strip non-ASCII characters as a last resort
       const sanitize = (str) => (typeof str === 'string' ? str.replace(/[^\x00-\x7F]/g, '') : str);
-      const safeValues = [sanitize(title), sql_query, sanitize(context), cleanTags.map(sanitize), module || 'otros', sanitize(dev)];
+      const safeValues = [sanitize(title), sql_query, sanitize(context), cleanTags.map(sanitize), module || 'otros', sanitize(dev), sanitize(type)];
       return await db.query(text, safeValues);
     }
     throw error;
@@ -36,7 +36,7 @@ const createQuery = async (data) => {
 const getQueries = async (page = 1, limit = 20) => {
   const offset = (page - 1) * limit;
   const text = `
-    SELECT id, title, sql_query, context, tags, module, dev, created_at
+    SELECT id, title, sql_query, context, tags, module, dev, type, created_at
     FROM queries
     ORDER BY created_at DESC
     LIMIT $1 OFFSET $2;
@@ -82,7 +82,7 @@ const deleteQuery = async (id) => {
  * Updates an existing query record
  */
 const updateQuery = async (id, data) => {
-  const { title, sql_query, context, tags, module, dev } = data;
+  const { title, sql_query, context, tags, module, dev, type } = data;
   
   const fields = [];
   const values = [];
@@ -94,6 +94,7 @@ const updateQuery = async (id, data) => {
   if (context !== undefined) { fields.push(`context = $${paramIndex++}`); values.push(context); }
   if (module !== undefined) { fields.push(`module = $${paramIndex++}`); values.push(module); }
   if (dev !== undefined) { fields.push(`dev = $${paramIndex++}`); values.push(dev); }
+  if (type !== undefined) { fields.push(`type = $${paramIndex++}`); values.push(type); }
   if (tags !== undefined) {
     const cleanTags = [...new Set(tags.filter(t => t && t.trim() !== '').map(t => t.toLowerCase()))];
     fields.push(`tags = $${paramIndex++}`);

@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS queries (
   sql_query  TEXT NOT NULL,
   context    TEXT NOT NULL,
   tags       TEXT[] DEFAULT '{}',
+  type       TEXT DEFAULT 'sql',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -21,22 +21,27 @@
         <!-- Sidebar / Navigation -->
         <aside class="sidebar glass-panel">
             <div class="logo">
-                <span class="icon">🔍</span>
+                <span class="icon" style="font-size: 1.8rem;">🔍</span>
                 <h1>SQLens</h1>
             </div>
-            <button id="btn-new-query" class="btn primary glowing-btn" style="width: 100%;">
-                <span class="icon">✨</span> Nueva Query
+            <button class="btn primary glowing-btn" id="btn-new-query" style="width: 100%; font-size: 1.05rem;">
+                <span class="icon">✨</span> Nuevo Registro
             </button>
-            <nav style="margin-top: 20px;">
-                <ul id="module-filters">
-                    <li class="active" data-module="all"><span class="icon">📊</span> Todos</li>
-                    <!-- Modules injected here -->
-                </ul>
+            <nav style="margin-top: 20px;" class="sidebar-nav">
+                <!-- El botón 'Todos' general -->
+                <div id="btn-filter-all" class="accordion-header active" data-type="all">
+                    <span class="icon">📊</span> Todos los Recursos
+                </div>
+                
+                <!-- Contenedor dinámico de los grupos -->
+                <div id="accordion-container">
+                    <!-- JS inyectará los acordeones aquí -->
+                </div>
             </nav>
             <div
                 style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px;">
                 <button id="btn-pos-directory" class="btn text-btn" style="width: 100%; justify-content: flex-start;">
-                    <span class="icon">👥</span> Directorio de POs
+                    <span class="icon">👥</span> Directorio de POs/LTs/Sre/Etc.
                 </button>
                 <button id="btn-admin-modules" class="btn text-btn" style="width: 100%; justify-content: flex-start;">
                     <span class="icon">⚙️</span> Configuración
@@ -66,20 +71,31 @@
         </main>
     </div>
 
-    <!-- Modal for New Query -->
+    <!-- Modal for New/Edit Query -->
     <div class="modal-overlay" id="query-modal">
         <div class="modal glass-panel">
             <div class="modal-header">
-                <h2 id="modal-title">Guardar Query</h2>
+                <h2 id="modal-title">✨ Agregar Registro</h2>
                 <button class="close-btn" id="btn-close-modal">&times;</button>
             </div>
             <form id="query-form">
-                <input type="hidden" id="query-id">
+                <input type="hidden" id="query_id">
+                
+                <div class="form-group">
+                    <label for="query_type">Tipo de Registro</label>
+                    <select id="query_type" required>
+                        <option value="sql" selected>🗄️ Query SQL</option>
+                        <option value="prompt">✨ Prompt de IA</option>
+                        <option value="note">📝 Apunte / Proceso</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="title">Título Corto</label>
+                    <input type="text" id="title" required placeholder="Ej: Pedidos de Módulo X">
+                </div>
+                
                 <div style="display: flex; gap: 15px; align-items: flex-end;">
-                    <div class="form-group" style="flex: 2;">
-                        <label for="title">Título</label>
-                        <input type="text" id="title" required placeholder="Ej: Buscar sesiones bloqueadas">
-                    </div>
                     <div class="form-group" style="flex: 1;">
                         <label for="module">Módulo</label>
                         <select id="module" required name="module">
@@ -96,7 +112,7 @@
                     <textarea id="context" required rows="3" placeholder="¿Para qué sirve esta query?"></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="sql_query">Código SQL</label>
+                    <label for="sql_query" id="label-sql-query">Contenido (SQL, Prompt, Texto...)</label>
                     <textarea id="sql_query" required rows="6" class="code-font"
                         placeholder="SELECT * FROM..."></textarea>
                     <button type="button" id="btn-auto-metadata" class="btn secondary btn-sm" style="margin-top: 8px;">✨

@@ -29,7 +29,8 @@ if (!localStorage.getItem('sqlens_token') && window.location.pathname !== '/logi
 let currentAiSuggestion = null;
 let allQueries = [];
 let allModules = []; 
-let currentFilter = 'all';
+let currentFilterType = 'all';
+let currentFilterModule = 'all';
 
 // Helper for Hex Icons (Emojis)
 function decodeIcon(iconStr) {
@@ -111,7 +112,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const aiSqlCode = document.getElementById('ai-sql-code');
     const aiWarnings = document.getElementById('ai-warnings');
     const btnCopyAi = document.getElementById('btn-copy-ai');
-    const moduleFilters = document.getElementById('module-filters');
     const btnAdminModules = document.getElementById('btn-admin-modules');
     const adminModulesModal = document.getElementById('admin-modules-modal');
     const btnCloseAdminModal = document.getElementById('btn-close-admin-modal');
@@ -147,6 +147,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const res = await fetch(`${API_URL}queries`);
             const data = await res.json();
             allQueries = data.data || [];
+            renderModuleFilters(); // Re-renderizar filtros basados en las queries reales
             renderQueries(allQueries);
         } catch (error) { queriesContainer.innerHTML = 'Error cargando queries'; }
     }
@@ -155,20 +156,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     function renderQueries(queries) {
         if (!queriesContainer) return;
         queriesContainer.innerHTML = '';
-        const filtered = currentFilter === 'all' ? queries : queries.filter(q => q.module === currentFilter);
+        
+        const filtered = queries.filter(q => {
+            const matchType = currentFilterType === 'all' || q.type === currentFilterType;
+            const matchModule = currentFilterModule === 'all' || q.module === currentFilterModule;
+            return matchType && matchModule;
+        });
+
         if (!filtered.length) { 
             queriesContainer.innerHTML = '<div style="text-align: center; color: var(--text-secondary); margin-top: 50px;">📭 No hay consultas aquí.</div>'; 
             return; 
         }
         filtered.forEach(q => {
             const mData = allModules.find(m => m.name === q.module) || { color: '#64748b', icon: '📁' };
+            const typeIcons = { sql: '🗄️', prompt: '✨', note: '📝' };
+            const tIcon = typeIcons[q.type] || '🗄️';
+            
             const card = document.createElement('div');
             card.className = 'query-card';
             card.innerHTML = `
                 <div class="card-header">
                     <div style="display: flex; flex-direction: column; gap: 4px; flex: 1;">
                         <span class="module-badge" style="background: ${mData.color}20; color: ${mData.color}; border: 1px solid ${mData.color}40; width: fit-content;">${decodeIcon(mData.icon)} ${q.module}</span>
-                        <h3 class="card-title">${escapeHtml(q.title)}</h3>
+                        <h3 class="card-title">${tIcon} ${escapeHtml(q.title)}</h3>
                     </div>
                     <span class="card-date">${formatDate(q.created_at)}</span>
                 </div>
@@ -190,22 +200,129 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function renderModuleFilters() {
-        if (!moduleFilters) return;
-        moduleFilters.innerHTML = `<li class="${currentFilter === 'all' ? 'active' : ''}" data-module="all"><span class="icon">📊</span> Todos</li>`;
-        allModules.forEach(m => {
-            const li = document.createElement('li');
-            const isActive = currentFilter === m.name;
-            li.className = isActive ? 'active' : '';
-            li.dataset.module = m.name;
+        const accordionContainer = document.getElementById('accordion-container');
+        if (!accordionContainer) return;
+        accordionContainer.innerHTML = '';
+
+        const typeGroups = [
+            { id: 'sql', title: '🗄️ Consultas SQL' },
+            { id: 'prompt', title: '✨ Prompts de IA' },
+            { id: 'note', title: '📝 Apuntes y Procesos' }
+        ];
+
+        typeGroups.forEach(group => {
+            const divGroup = document.createElement('div');
+            divGroup.className = `accordion-group ${currentFilterType === group.id ? 'open' : ''}`;
             
-            // Si está activo, aplicamos una sutil sombra o borde del color del módulo
-            if (isActive) {
-                li.style.borderRight = `4px solid ${m.color}`;
-                li.style.background = `${m.color}10`;
+            const header = document.createElement('div');
+            header.className = `accordion-header ${currentFilterType === group.id && currentFilterModule === 'all' ? 'active' : ''}`;
+            header.innerHTML = `
+                ${group.title}
+                <span class="accordion-toggle">▶</span>
+            `;
+            header.addEventListener('click', () => {
+                // Toggle open
+                const isOpen = divGroup.classList.contains('open');
+                document.querySelectorAll('.accordion-group').forEach(g => g.classList.remove('open'));
+                if (!isOpen) divGroup.classList.add('open');
+
+                // Filter by type but 'all' modules
+                currentFilterType = group.id;
+                currentFilterModule = 'all';
+                updateSidebarActiveStates();
+                renderQueries(allQueries);
+            });
+
+            const content = document.createElement('div');
+            content.className = 'accordion-content';
+            const ul = document.createElement('ul');
+
+            // Filtrar módulos que realmente tienen registros de este tipo
+            const hasItems = allQueries.some(q => q.type === group.id);
+            const activeModulesForType = [...new Set(allQueries.filter(q => q.type === group.id).map(q => q.module))];
+
+            if (!hasItems) {
+                ul.innerHTML = '<li style="color: var(--text-secondary); font-size: 0.85rem; padding-left: 5px;">Ningún registro aún</li>';
+            } else {
+                allModules.forEach(m => {
+                    // Si el módulo no tiene registros de este tipo, lo saltamos
+                    if (!activeModulesForType.includes(m.name)) return;
+
+                    const li = document.createElement('li');
+                    const isActive = currentFilterType === group.id && currentFilterModule === m.name;
+                li.className = isActive ? 'active' : '';
+                li.dataset.module = m.name;
+                li.dataset.type = group.id;
+                
+                if (isActive) {
+                    li.style.borderRight = `4px solid ${m.color}`;
+                    li.style.background = `${m.color}10`;
+                }
+
+                li.innerHTML = `<span class="icon" style="background: ${m.color}15; color: ${m.color}; border-radius: 6px; padding: 4px; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; font-size: 1rem;">${decodeIcon(m.icon)}</span> <span style="text-transform: capitalize;">${m.name}</span>`;
+                
+                li.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    currentFilterType = group.id;
+                    currentFilterModule = m.name;
+                    updateSidebarActiveStates();
+                    renderQueries(allQueries);
+                });
+
+                ul.appendChild(li);
+                });
             }
 
-            li.innerHTML = `<span class="icon" style="background: ${m.color}15; color: ${m.color}; border-radius: 6px; padding: 4px; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; font-size: 1rem;">${decodeIcon(m.icon)}</span> ${m.name.charAt(0).toUpperCase() + m.name.slice(1)}`;
-            moduleFilters.appendChild(li);
+            content.appendChild(ul);
+            divGroup.appendChild(header);
+            divGroup.appendChild(content);
+            accordionContainer.appendChild(divGroup);
+        });
+
+        // Event listener for "Todos" button
+        const btnAll = document.getElementById('btn-filter-all');
+        if (btnAll) {
+            btnAll.addEventListener('click', () => {
+                currentFilterType = 'all';
+                currentFilterModule = 'all';
+                document.querySelectorAll('.accordion-group').forEach(g => g.classList.remove('open'));
+                updateSidebarActiveStates();
+                renderQueries(allQueries);
+            });
+        }
+        updateSidebarActiveStates();
+    }
+
+    function updateSidebarActiveStates() {
+        const btnAll = document.getElementById('btn-filter-all');
+        if (btnAll) {
+            if (currentFilterType === 'all') btnAll.classList.add('active');
+            else btnAll.classList.remove('active');
+        }
+
+        document.querySelectorAll('.accordion-header:not(#btn-filter-all)').forEach(header => {
+            const groupDiv = header.closest('.accordion-group');
+            const groupId = groupDiv.querySelector('li') ? groupDiv.querySelector('li').dataset.type : '';
+            if (currentFilterType === groupId && currentFilterModule === 'all') {
+                header.classList.add('active');
+            } else {
+                header.classList.remove('active');
+            }
+        });
+
+        document.querySelectorAll('.accordion-content li').forEach(li => {
+            if (li.dataset.module === currentFilterModule && li.dataset.type === currentFilterType) {
+                li.classList.add('active');
+                const mData = allModules.find(m => m.name === currentFilterModule);
+                if(mData) {
+                    li.style.borderRight = `4px solid ${mData.color}`;
+                    li.style.background = `${mData.color}10`;
+                }
+            } else {
+                li.classList.remove('active');
+                li.style.borderRight = '';
+                li.style.background = '';
+            }
         });
     }
 
@@ -230,21 +347,41 @@ document.addEventListener('DOMContentLoaded', async () => {
         `).join('');
     }
 
+    const queryType = document.getElementById('query_type');
+    const labelSqlQuery = document.getElementById('label-sql-query');
+
+    if (queryType && labelSqlQuery) {
+        queryType.addEventListener('change', (e) => {
+            const v = e.target.value;
+            if (v === 'sql') labelSqlQuery.textContent = 'Código SQL';
+            else if (v === 'prompt') labelSqlQuery.textContent = 'Prompt de IA (Texto)';
+            else labelSqlQuery.textContent = 'Apunte / Documentación';
+        });
+    }
+
     const openModal = (query = null, isEdit = false) => {
         modalError.textContent = '';
         if (query) {
-            modalTitle.textContent = isEdit ? 'Editar Query' : 'Guardar Query';
-            document.getElementById('query-id').value = isEdit ? query.id : ''; 
+            modalTitle.textContent = isEdit ? '✨ Editar Registro' : '✨ Guardar Registro';
+            document.getElementById('query_id').value = isEdit ? query.id : ''; 
             document.getElementById('title').value = query.title || '';
             document.getElementById('context').value = query.context || '';
             document.getElementById('sql_query').value = query.sql_query || '';
             document.getElementById('module').value = query.module || 'otros';
             document.getElementById('dev').value = query.dev || '';
             document.getElementById('tags').value = query.tags ? query.tags.join(', ') : '';
+            if (queryType) {
+                queryType.value = query.type || 'sql';
+                queryType.dispatchEvent(new Event('change'));
+            }
         } else {
-            modalTitle.textContent = 'Nueva Query';
+            modalTitle.textContent = '✨ Agregar Registro';
             queryForm.reset();
-            document.getElementById('query-id').value = '';
+            document.getElementById('query_id').value = '';
+            if (queryType) {
+                queryType.value = 'sql';
+                queryType.dispatchEvent(new Event('change'));
+            }
         }
         modalOverlay.classList.add('active');
     };
@@ -253,13 +390,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function handleSaveQuery(e) {
         e.preventDefault();
-        const id = document.getElementById('query-id').value;
+        const id = document.getElementById('query_id').value;
         const payload = {
             title: document.getElementById('title').value,
             context: document.getElementById('context').value,
             sql_query: document.getElementById('sql_query').value,
             module: document.getElementById('module').value,
             dev: document.getElementById('dev').value,
+            type: document.getElementById('query_type') ? document.getElementById('query_type').value : 'sql',
             tags: document.getElementById('tags').value.split(',').map(t => t.trim()).filter(Boolean)
         };
         try {
@@ -365,14 +503,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         finally { btnAutoMetadata.textContent = '✨ Autocompletar con IA'; }
     });
 
-    moduleFilters.addEventListener('click', (e) => {
-        const li = e.target.closest('li');
-        if (!li) return;
-        moduleFilters.querySelectorAll('li').forEach(item => item.classList.remove('active'));
-        li.classList.add('active');
-        currentFilter = li.dataset.module;
-        renderQueries(allQueries);
-    });
+
 
     queriesContainer.addEventListener('click', (e) => {
         if (e.target.matches('[data-action="copy"]')) window.copyToClipboard(e.target);

@@ -103,6 +103,58 @@ nav li.active::after {
     border-radius: 0 4px 4px 0;
 }
 
+/* Accordion Styles */
+.accordion-header {
+    padding: 12px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.accordion-header:hover {
+    background: var(--input-bg);
+}
+
+.accordion-header.active {
+    background: #eff6ff;
+    color: var(--accent-blue);
+}
+
+.accordion-toggle {
+    margin-left: auto;
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+}
+
+.accordion-group.open .accordion-toggle {
+    transform: rotate(90deg);
+}
+
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    padding-left: 10px;
+}
+
+.accordion-group.open .accordion-content {
+    max-height: 1000px; /* Suficiente espacio para la lista */
+    transition: max-height 0.5s ease-in;
+}
+
+.accordion-content ul {
+    margin-top: 5px;
+    margin-bottom: 10px;
+    border-left: 2px solid var(--border-color);
+    padding-left: 10px;
+}
+
 /* Module Badges */
 .module-badge {
     padding: 2px 10px;
