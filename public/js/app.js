@@ -1,6 +1,31 @@
 // Base API URL
 const API_URL = '/'; 
 
+// Auth Interceptor
+const originalFetch = window.fetch;
+window.fetch = async function(resource, config) {
+    config = config || {};
+    config.headers = config.headers || {};
+    
+    const token = localStorage.getItem('sqlens_token');
+    if (token) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await originalFetch(resource, config);
+    // If 401 Unauthorized, clear token and redirect to login
+    if (response.status === 401 && !resource.includes('/auth/')) {
+        localStorage.removeItem('sqlens_token');
+        window.location.href = '/login.html';
+    }
+    return response;
+};
+
+// Redirect if no token exists on load
+if (!localStorage.getItem('sqlens_token') && window.location.pathname !== '/login.html') {
+    window.location.href = '/login.html';
+}
+
 let currentAiSuggestion = null;
 let allQueries = [];
 let allModules = []; 

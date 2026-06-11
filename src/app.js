@@ -7,10 +7,12 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 
 // Use lazy loading / inline requires for routes to avoid circular dependencies if they exist
+const authRoutes = require('./routes/auth.routes');
 const queriesRoutes = require('./routes/queries.routes');
 const searchRoutes = require('./routes/search.routes');
 const modulesRoutes = require('./routes/modules.routes');
 const errorHandler = require('./middleware/errorHandler');
+const authMiddleware = require('./middleware/auth');
 const { pool } = require('./db/pool');
 
 const app = express();
@@ -56,10 +58,13 @@ app.get('/health', async (req, res, next) => {
 // Static files for Frontend
 app.use(express.static(path.join(__dirname, '../public')));
 
-// App routing
-app.use('/queries', queriesRoutes);
-app.use('/modules', modulesRoutes);
-app.use('/', searchRoutes);
+// Auth routing (Unprotected)
+app.use('/auth', authRoutes);
+
+// App routing (Protected)
+app.use('/queries', authMiddleware, queriesRoutes);
+app.use('/modules', authMiddleware, modulesRoutes);
+app.use('/', authMiddleware, searchRoutes);
 
 // Global Error Handler
 app.use(errorHandler);

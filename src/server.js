@@ -4,7 +4,7 @@ const http = require('http');
 const app = require('./app');
 
 // Validate critical environment variables required at startup
-const requiredEnvVars = ['DATABASE_URL', 'OPENROUTER_API_KEY'];
+const requiredEnvVars = ['DATABASE_URL', 'OPENROUTER_API_KEY', 'APP_PASSWORD', 'JWT_SECRET'];
 const missingVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
 
 if (missingVars.length > 0) {
