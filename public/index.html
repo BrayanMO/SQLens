@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SQLens - Query Manager</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔍</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
     <!-- Marked.js for AI Chat Markdown rendering -->
@@ -100,6 +101,9 @@
                         <option value="sql" selected>🗄️ Query SQL</option>
                         <option value="prompt">✨ Prompt de IA</option>
                         <option value="note">📝 Apunte / Proceso</option>
+                        <option value="sicc">💻 SICC</option>
+                        <option value="ods">🗂️ ODS</option>
+                        <option value="prol">📊 PROL</option>
                     </select>
                 </div>
 
@@ -283,7 +287,7 @@
     <!-- AI Chat Bubble -->
     <div id="ai-chat-container">
         <button id="chat-toggle-btn" class="glowing-btn">
-            <span class="chat-icon">💬</span>
+            <span class="chat-icon" style="font-size: 1.3rem;">💬</span> Profesor de Consultas
         </button>
         <div id="chat-window" class="glass-panel">
             <div class="chat-header">
@@ -291,7 +295,7 @@
                 <button id="close-chat">&times;</button>
             </div>
             <div id="chat-messages">
-                <div class="message assistant">¡Hola! Soy tu asistente SQLens. ¿En qué puedo ayudarte hoy?</div>
+                <div class="message assistant">¡Hola! Si tienes dudas sobre lo que hace alguna consulta SQL, pégala aquí y te la explico.</div>
             </div>
             <div class="chat-input-area">
                 <textarea id="chat-input" placeholder="Escribe tu duda o pega código SQL aquí..." rows="1"></textarea>

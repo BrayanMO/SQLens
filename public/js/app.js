@@ -169,8 +169,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             return; 
         }
         filtered.forEach(q => {
-            const mData = allModules.find(m => m.name === q.module) || { color: '#64748b', icon: '📁' };
-            const typeIcons = { sql: '🗄️', prompt: '✨', note: '📝' };
+            const mData = allModules.find(m => m.name.toLowerCase() === (q.module || '').toLowerCase()) || { color: '#64748b', icon: '📁' };
+            const typeIcons = { sql: '🗄️', prompt: '✨', note: '📝', sicc: '💻', ods: '🗂️', prol: '📊' };
             const tIcon = typeIcons[q.type] || '🗄️';
             const isFav = q.is_favorite ? '⭐' : '☆';
             
@@ -226,7 +226,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const typeGroups = [
             { id: 'sql', title: '🗄️ Consultas SQL' },
             { id: 'prompt', title: '✨ Prompts de IA' },
-            { id: 'note', title: '📝 Apuntes y Procesos' }
+            { id: 'note', title: '📝 Apuntes y Procesos' },
+            { id: 'sicc', title: '💻 SICC' },
+            { id: 'ods', title: '🗂️ ODS' },
+            { id: 'prol', title: '📊 PROL' }
         ];
 
         typeGroups.forEach(group => {
@@ -278,7 +281,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     li.style.background = `${m.color}10`;
                 }
 
-                li.innerHTML = `<span class="icon" style="background: ${m.color}15; color: ${m.color}; border-radius: 6px; padding: 4px; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; font-size: 1rem;">${decodeIcon(m.icon)}</span> <span style="text-transform: capitalize;">${m.name}</span>`;
+                li.innerHTML = `<span class="icon" style="background: ${m.color}15; color: ${m.color}; border-radius: 6px; padding: 4px; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; font-size: 1rem;">${decodeIcon(m.icon)}</span> <span>${m.name}</span>`;
                 
                 li.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -365,7 +368,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function renderModuleSelector() {
         const select = document.getElementById('module');
-        if (select) select.innerHTML = allModules.map(m => `<option value="${m.name}">${m.name.charAt(0).toUpperCase() + m.name.slice(1)}</option>`).join('');
+        if (select) select.innerHTML = allModules.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
     }
 
     function renderAdminModulesList() {
@@ -374,7 +377,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="module-admin-item">
                 <div class="module-info">
                     <div class="module-icon-preview" style="background: ${m.color}20; color: ${m.color}">${decodeIcon(m.icon)}</div>
-                    <div><strong style="text-transform: capitalize;">${m.name}</strong><div style="font-size: 0.8rem; color: var(--text-secondary)">Color: ${m.color}</div></div>
+                    <div><strong>${m.name}</strong><div style="font-size: 0.8rem; color: var(--text-secondary)">Color: ${m.color}</div></div>
                 </div>
                 <div class="module-admin-actions">
                     <button class="btn text-btn btn-sm" onclick="editModuleInAdmin(${m.id}, '${m.name}', '${decodeIcon(m.icon)}', '${m.color}')">Editar</button>
@@ -392,6 +395,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const v = e.target.value;
             if (v === 'sql') labelSqlQuery.textContent = 'Código SQL';
             else if (v === 'prompt') labelSqlQuery.textContent = 'Prompt de IA (Texto)';
+            else if (v === 'sicc') labelSqlQuery.textContent = 'Consulta / Contenido SICC';
+            else if (v === 'ods') labelSqlQuery.textContent = 'Consulta / Contenido ODS';
+            else if (v === 'prol') labelSqlQuery.textContent = 'Consulta / Contenido PROL';
             else labelSqlQuery.textContent = 'Apunte / Documentación';
         });
     }
@@ -401,10 +407,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (query) {
             modalTitle.textContent = isEdit ? '✨ Editar Registro' : '✨ Guardar Registro';
             document.getElementById('query_id').value = isEdit ? query.id : ''; 
-            document.getElementById('title').value = query.title || '';
+            document.getElementById('title').value = (query.title || '').toUpperCase();
             document.getElementById('context').value = query.context || '';
             document.getElementById('sql_query').value = query.sql_query || '';
-            document.getElementById('module').value = query.module || 'otros';
+            const matchingModule = allModules.find(m => m.name.toLowerCase() === (query.module || '').toLowerCase());
+            document.getElementById('module').value = matchingModule ? matchingModule.name : 'otros';
             document.getElementById('dev').value = query.dev || '';
             document.getElementById('tags').value = query.tags ? query.tags.join(', ') : '';
             if (queryType) {
@@ -429,7 +436,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
         const id = document.getElementById('query_id').value;
         const payload = {
-            title: document.getElementById('title').value,
+            title: document.getElementById('title').value.toUpperCase(),
             context: document.getElementById('context').value,
             sql_query: document.getElementById('sql_query').value,
             module: document.getElementById('module').value,
@@ -493,6 +500,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     queryForm.addEventListener('submit', handleSaveQuery);
     btnCloseAiModal.addEventListener('click', () => aiModalOverlay.classList.remove('active'));
 
+    const titleInput = document.getElementById('title');
+    if (titleInput) {
+        titleInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
+        });
+    }
+
     let searchTimeout;
     searchInput.addEventListener('input', () => {
         const val = searchInput.value;
@@ -531,9 +545,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const res = await fetch(`${API_URL}generate-metadata`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sql_query: sqlText }) });
             const data = await res.json();
             if (data.success && data.data) {
-                document.getElementById('title').value = data.data.title;
                 document.getElementById('context').value = data.data.context;
-                document.getElementById('module').value = data.data.module;
                 document.getElementById('tags').value = data.data.tags.join(', ');
             }
         } catch (err) {}

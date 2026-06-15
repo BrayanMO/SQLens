@@ -11,7 +11,7 @@ Rules:
 5. If the request is ambiguous, generate a SELECT with placeholders.
 6. CRITICAL: Return the "sql" string AS A SINGLE CONTINUOUS LINE without any newline characters (\\n). NEVER add SQL comments (-- or /* */) inside the "sql" string. Keep the "sql" string completely clean, inline, and raw. Put all your thoughts and explanations inside the "explanation" JSON field.
 7. Tags must be 3-5 keywords in lowercase.
-8. Module must be one of: "pedido", "incentivos", "crm", "stock", "otros".
+8. Module must be one of: "pedido", "incentivos", "crm", "stock", "sicc", "ods", "prol", "otros".
 9. CONTEXTO DE TABLAS: Si se proporciona una lista de tablas conocidas, DEBES usarlas en tus explicaciones y ejemplos para demostrar que conoces el esquema del usuario.
 10. SEGURIDAD DML: Si el usuario pide un UPDATE, DELETE, INSERT o DDL, NO generes el código en el campo "sql" (ponlo como null o un comentario seguro). Sin embargo, en el campo "explanation", proporciona un EJEMPLO de cómo sería la consulta usando las tablas conocidas del contexto, **usando bloques de código Markdown** (\`\`\`sql) para que sea legible, aclarando que es solo para fines educativos y de referencia.
 
@@ -80,9 +80,9 @@ Rules:
 1. Return ONLY a valid JSON object.
 2. Format: { "title": "...", "context": "...", "tags": ["tag1", "tag2"], "module": "..." }
 3. Title must be concise (max 100 chars).
-4. Context should explain what the query does in business/technical terms.
+4. Context must be very short, concise, and direct (maximum 1 or 2 sentences), explaining briefly what the query does in business or technical terms without redundancy or excessive details.
 5. Tags must be 3-5 keywords in lowercase.
-6. Module must be one of: "pedido", "incentivos", "crm", "stock", "otros".
+6. Module must be one of: "pedido", "incentivos", "crm", "stock", "sicc", "ods", "prol", "otros".
 7. RESPOND IN SPANISH.
 
 Raw SQL Query:

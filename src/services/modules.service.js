@@ -20,7 +20,7 @@ const createModule = async (data) => {
     VALUES ($1, $2, $3)
     RETURNING *;
   `;
-  const values = [name.toLowerCase().trim(), icon || 'hex:1F4C1', color || '#475569'];
+  const values = [name.trim(), icon || 'hex:1F4C1', color || '#475569'];
   const result = await db.query(text, values);
   return result.rows[0];
 };
@@ -36,7 +36,7 @@ const updateModule = async (id, data) => {
     WHERE id = $4
     RETURNING *;
   `;
-  const values = [name.toLowerCase().trim(), icon, color, id];
+  const values = [name.trim(), icon, color, id];
   const result = await db.query(text, values);
   return result.rows[0];
 };

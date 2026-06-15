@@ -8,7 +8,7 @@ const searchDatabase = async (searchQuery) => {
   // We use $1 for parameterized query to prevent SQL injection
   // ILIKE is case-insensitive
   const text = `
-    SELECT id, title, sql_query, context, tags, module, created_at
+    SELECT id, title, sql_query, context, tags, module, dev, type, is_favorite, created_at
     FROM queries
     WHERE title ILIKE $1 
        OR context ILIKE $1 

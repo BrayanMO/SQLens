@@ -6,6 +6,7 @@ const db = require('../db/pool');
  */
 const createQuery = async (data) => {
   const { title, sql_query, context, tags = [], module = 'otros', dev = '', type = 'sql', is_favorite = false } = data;
+  const upperTitle = title ? title.trim().toUpperCase() : '';
   
   // Clean up tags: discard empty, deduplicate, lowercase
   const cleanTags = [...new Set(tags.filter(t => t && t.trim() !== '').map(t => t.toLowerCase()))];
@@ -15,14 +16,14 @@ const createQuery = async (data) => {
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     RETURNING *;
   `;
-  const values = [title, sql_query, context, cleanTags, module || 'otros', dev, type, is_favorite];
+  const values = [upperTitle, sql_query, context, cleanTags, module || 'otros', dev, type, is_favorite];
   
   const result = await db.query(text, values).catch(async (error) => {
     if (error.message.includes('codificación') || error.code === '22021') {
       console.warn('Encoding error in query. Sanitizing...');
       // Strip non-ASCII characters as a last resort
       const sanitize = (str) => (typeof str === 'string' ? str.replace(/[^\x00-\x7F]/g, '') : str);
-      const safeValues = [sanitize(title), sql_query, sanitize(context), cleanTags.map(sanitize), module || 'otros', sanitize(dev), sanitize(type), is_favorite];
+      const safeValues = [sanitize(upperTitle), sql_query, sanitize(context), cleanTags.map(sanitize), module || 'otros', sanitize(dev), sanitize(type), is_favorite];
       return await db.query(text, safeValues);
     }
     throw error;
@@ -89,7 +90,7 @@ const updateQuery = async (id, data) => {
   let queryText = 'UPDATE queries SET ';
   let paramIndex = 1;
 
-  if (title !== undefined) { fields.push(`title = $${paramIndex++}`); values.push(title); }
+  if (title !== undefined) { fields.push(`title = $${paramIndex++}`); values.push(title ? title.trim().toUpperCase() : ''); }
   if (sql_query !== undefined) { fields.push(`sql_query = $${paramIndex++}`); values.push(sql_query); }
   if (context !== undefined) { fields.push(`context = $${paramIndex++}`); values.push(context); }
   if (module !== undefined) { fields.push(`module = $${paramIndex++}`); values.push(module); }
