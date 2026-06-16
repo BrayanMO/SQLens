@@ -70,7 +70,7 @@ const generateMetadata = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, error: 'sql_query is required para autocompletar' });
   }
 
-  const metadata = await aiService.generateMetadataFromSql(req.body.sql_query);
+  const metadata = await aiService.generateMetadataFromSql(req.body.sql_query, req.body.title || '', req.body.type || 'sql');
   res.status(200).json({ success: true, data: metadata });
 });
 

@@ -69,24 +69,33 @@ const generateAISqlSuggestion = async (userInput, schemaContext = '') => {
 /**
  * Generates title, context and tags from raw SQL
  */
-const generateMetadataFromSql = async (sqlQuery) => {
+const generateMetadataFromSql = async (sqlQuery, title = '', type = 'sql') => {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error('OPENROUTER_API_KEY is not configured');
 
-  const systemPrompt = `You are a SQL analyzer. 
-The user will provide a raw SQL query. 
+  const systemPrompt = `You are a technical documenter and IT systems analyzer.
+The user will provide a record value/content (which could be a SQL query, credentials, server details, connections, etc.) and optionally a short title representing the intent of the record.
 Your task: generate a highly descriptive Spanish title, a clear context/explanation, relevant tags, and assign a module for it.
+
+Guidelines based on the Record Type ("${type}"):
+- If type is "sql", "sicc", "ods", or "prol": The content is a SQL query. Explain briefly what the query retrieves or does in business/technical terms. Crucially, combine the SQL query with the user's title context (if provided) to understand the exact business intent and give a logical explanation instead of making literal or nonsensical guesses about table names.
+- If type is "usuarios_contrasenas": The content is a password, token, or credential. Explain briefly what access or credential this is for (e.g. "Contraseña de acceso para el entorno X"). DO NOT say it "recupera" or "ejecuta" queries.
+- If type is "servidores" or "servicios": The content relates to server configuration, commands, or service details. Explain what the server/service is used for.
+- If type is "conexiones": The content is a connection string, DB URL, or connection details. Explain what environment or database it connects to.
+- For other types: Explain the purpose of the provided content.
+
 Rules:
 1. Return ONLY a valid JSON object.
 2. Format: { "title": "...", "context": "...", "tags": ["tag1", "tag2"], "module": "..." }
 3. Title must be concise (max 100 chars).
-4. Context must be very short, concise, and direct (maximum 1 or 2 sentences), explaining briefly what the query does in business or technical terms without redundancy or excessive details.
+4. Context must be very short, concise, and direct (maximum 1 or 2 sentences), explaining briefly the purpose of the content in business or technical terms without redundancy or excessive details.
 5. Tags must be 3-5 keywords in lowercase.
 6. Module must be one of: "pedido", "incentivos", "crm", "stock", "sicc", "ods", "prol", "otros".
 7. RESPOND IN SPANISH.
 
-Raw SQL Query:
-{SQL_INPUT}`;
+Record Content:
+{SQL_INPUT}
+${title ? `\nContexto de Título / Intención de Negocio del usuario:\n${title}` : ''}`;
 
   const prompt = systemPrompt.replace('{SQL_INPUT}', sqlQuery);
 

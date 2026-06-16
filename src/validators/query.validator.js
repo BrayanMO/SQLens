@@ -8,7 +8,7 @@ const createQuerySchema = Joi.object({
   tags: Joi.array().items(Joi.string().trim().allow('')).max(10).optional(),
   module: Joi.string().allow('', null).optional(),
   dev: Joi.string().max(100).allow('', null).optional(),
-  type: Joi.string().valid('sql', 'prompt', 'note', 'sicc', 'ods', 'prol').optional(),
+  type: Joi.string().valid('sql', 'prompt', 'note', 'sicc', 'ods', 'prol', 'servicios', 'servidores', 'conexiones', 'usuarios_contrasenas').optional(),
   is_favorite: Joi.boolean().optional()
 });
 
@@ -19,7 +19,7 @@ const updateQuerySchema = Joi.object({
   tags: Joi.array().items(Joi.string().trim().allow('')).max(10).optional(),
   module: Joi.string().allow('', null).optional(),
   dev: Joi.string().max(100).allow('', null).optional(),
-  type: Joi.string().valid('sql', 'prompt', 'note', 'sicc', 'ods', 'prol').optional(),
+  type: Joi.string().valid('sql', 'prompt', 'note', 'sicc', 'ods', 'prol', 'servicios', 'servidores', 'conexiones', 'usuarios_contrasenas').optional(),
   is_favorite: Joi.boolean().optional()
 });
 

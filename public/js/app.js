@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         filtered.forEach(q => {
             const mData = allModules.find(m => m.name.toLowerCase() === (q.module || '').toLowerCase()) || { color: '#64748b', icon: '📁' };
-            const typeIcons = { sql: '🗄️', prompt: '✨', note: '📝', sicc: '💻', ods: '🗂️', prol: '📊' };
+            const typeIcons = { sql: '🗄️', prompt: '✨', note: '📝', sicc: '💻', ods: '🗂️', prol: '📊', servicios: '🛠️', servidores: '🖥️', conexiones: '🔗', usuarios_contrasenas: '🔑' };
             const tIcon = typeIcons[q.type] || '🗄️';
             const isFav = q.is_favorite ? '⭐' : '☆';
             
@@ -229,7 +229,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             { id: 'note', title: '📝 Apuntes y Procesos' },
             { id: 'sicc', title: '💻 SICC' },
             { id: 'ods', title: '🗂️ ODS' },
-            { id: 'prol', title: '📊 PROL' }
+            { id: 'prol', title: '📊 PROL' },
+            { id: 'servicios', title: '🛠️ Servicios' },
+            { id: 'servidores', title: '🖥️ Servidores' },
+            { id: 'conexiones', title: '🔗 Conexiones' },
+            { id: 'usuarios_contrasenas', title: '🔑 Usuarios y Contraseñas' }
         ];
 
         typeGroups.forEach(group => {
@@ -398,6 +402,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             else if (v === 'sicc') labelSqlQuery.textContent = 'Consulta / Contenido SICC';
             else if (v === 'ods') labelSqlQuery.textContent = 'Consulta / Contenido ODS';
             else if (v === 'prol') labelSqlQuery.textContent = 'Consulta / Contenido PROL';
+            else if (v === 'servicios') labelSqlQuery.textContent = 'Detalle de Servicios';
+            else if (v === 'servidores') labelSqlQuery.textContent = 'Configuración de Servidores';
+            else if (v === 'conexiones') labelSqlQuery.textContent = 'Detalle de Conexiones';
+            else if (v === 'usuarios_contrasenas') labelSqlQuery.textContent = 'Usuarios y Contraseñas';
             else labelSqlQuery.textContent = 'Apunte / Documentación';
         });
     }
@@ -503,7 +511,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const titleInput = document.getElementById('title');
     if (titleInput) {
         titleInput.addEventListener('input', (e) => {
+            const start = e.target.selectionStart;
+            const end = e.target.selectionEnd;
             e.target.value = e.target.value.toUpperCase();
+            e.target.setSelectionRange(start, end);
         });
     }
 
@@ -539,10 +550,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnAutoMetadata = document.getElementById('btn-auto-metadata');
     btnAutoMetadata.addEventListener('click', async () => {
         const sqlText = document.getElementById('sql_query').value;
+        const titleText = document.getElementById('title').value;
+        const typeVal = document.getElementById('query_type') ? document.getElementById('query_type').value : 'sql';
         if (!sqlText.trim()) return;
         btnAutoMetadata.textContent = 'Analizando...';
         try {
-            const res = await fetch(`${API_URL}generate-metadata`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sql_query: sqlText }) });
+            const res = await fetch(`${API_URL}generate-metadata`, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ 
+                    sql_query: sqlText, 
+                    title: titleText ? titleText.trim() : '',
+                    type: typeVal
+                }) 
+            });
             const data = await res.json();
             if (data.success && data.data) {
                 document.getElementById('context').value = data.data.context;
