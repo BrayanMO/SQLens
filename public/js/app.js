@@ -998,6 +998,87 @@ document.addEventListener('DOMContentLoaded', async () => {
         } 
     };
 
+    // ── Mobile Sidebar Toggle ────────────────────────────────────────
+    const btnSidebarToggle = document.getElementById('btn-sidebar-toggle');
+    const sidebarOverlay   = document.getElementById('sidebar-overlay');
+    const sidebarEl        = document.querySelector('.sidebar');
+
+    function openMobileSidebar() {
+        sidebarEl.classList.add('mobile-open');
+        sidebarOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden'; // evita scroll detrás
+    }
+
+    function closeMobileSidebar() {
+        sidebarEl.classList.remove('mobile-open');
+        sidebarOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (btnSidebarToggle) {
+        btnSidebarToggle.addEventListener('click', () => {
+            if (sidebarEl.classList.contains('mobile-open')) {
+                closeMobileSidebar();
+            } else {
+                openMobileSidebar();
+            }
+        });
+    }
+
+    // Cerrar al hacer clic en el overlay
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', closeMobileSidebar);
+    }
+
+    // Cerrar sidebar al seleccionar un filtro en móvil
+    if (sidebarEl) {
+        sidebarEl.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768) {
+                // Cerrar si hizo clic en un ítem de navegación o en Nuevo Registro
+                const isNavItem = e.target.closest('.accordion-header, .accordion-content li, #btn-filter-all, #btn-filter-favorites, #btn-new-query');
+                if (isNavItem) {
+                    setTimeout(closeMobileSidebar, 150); // pequeño delay para ver el efecto
+                }
+            }
+        });
+    }
+    // ────────────────────────────────────────────────────────────────
+
+    // ── WhatsApp Support Button ──────────────────────────────────────
+    const waToggleBtn   = document.getElementById('wa-toggle-btn');
+    const waPopup       = document.getElementById('wa-popup');
+    const btnCloseWa    = document.getElementById('btn-close-wa-popup');
+
+    function openWaPopup() {
+        waPopup.classList.add('open');
+    }
+
+    function closeWaPopup() {
+        waPopup.classList.remove('open');
+    }
+
+    if (waToggleBtn) {
+        waToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            waPopup.classList.contains('open') ? closeWaPopup() : openWaPopup();
+        });
+    }
+
+    if (btnCloseWa) {
+        btnCloseWa.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeWaPopup();
+        });
+    }
+
+    // Cerrar al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        if (waPopup && !waPopup.contains(e.target) && e.target !== waToggleBtn) {
+            closeWaPopup();
+        }
+    });
+    // ────────────────────────────────────────────────────────────────
+
 }); // End of DOMContentLoaded
 
 function escapeHtml(unsafe) {

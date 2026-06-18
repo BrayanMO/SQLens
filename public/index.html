@@ -22,6 +22,9 @@
     <div class="bg-shape shape-2"></div>
     <div class="bg-shape shape-3"></div>
 
+    <!-- Sidebar overlay for mobile -->
+    <div id="sidebar-overlay"></div>
+
     <div class="app-container">
         <!-- Sidebar / Navigation -->
         <aside class="sidebar glass-panel">
@@ -72,6 +75,10 @@
         <!-- Main Content Area -->
         <main class="main-content">
             <header class="top-header glass-panel">
+                <!-- Hamburger toggle (visible only on mobile) -->
+                <button id="btn-sidebar-toggle" class="btn text-btn" aria-label="Abrir menú">
+                    <span style="font-size:1.3rem; line-height:1;">☰</span>
+                </button>
                 <div class="search-bar">
                     <span class="icon search-icon">🔎</span>
                     <input type="text" id="searchInput" placeholder="Buscar por título, contexto, tags o módulo...">
@@ -297,7 +304,7 @@
     <!-- AI Chat Bubble -->
     <div id="ai-chat-container">
         <button id="chat-toggle-btn" class="glowing-btn">
-            <span class="chat-icon" style="font-size: 1.3rem;">💬</span> Profesor de Consultas
+            <span class="chat-icon" style="font-size: 1.3rem;">💬</span> <span class="chat-btn-text">Profesor de Consultas</span>
         </button>
         <div id="chat-window" class="glass-panel">
             <div class="chat-header">
@@ -312,6 +319,45 @@
                 <button id="send-chat-btn">🚀</button>
             </div>
         </div>
+    </div>
+
+
+    <!-- WhatsApp Support Floating Button -->
+    <div id="wa-support-container">
+        <!-- Popup -->
+        <div id="wa-popup" class="glass-panel">
+            <div class="wa-popup-header">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 32 32" fill="#25D366"><path d="M16 0C7.163 0 0 7.163 0 16c0 2.836.74 5.5 2.035 7.818L.053 31.179a1 1 0 0 0 1.218 1.218l7.361-1.982A15.94 15.94 0 0 0 16 32c8.837 0 16-7.163 16-16S24.837 0 16 0zm0 29c-2.56 0-4.98-.69-7.07-1.99l-.49-.3-5.1 1.37 1.37-5.1-.3-.49A13 13 0 1 1 16 29zm7.26-9.92c-.38-.19-2.24-1.1-2.58-1.23-.35-.13-.6-.19-.85.19-.25.38-.97 1.23-1.18 1.48-.22.25-.43.28-.81.09-.38-.19-1.61-.59-3.07-1.89-1.13-1.01-1.9-2.26-2.12-2.64-.22-.38-.02-.59.17-.77.17-.17.38-.43.57-.64.19-.22.25-.38.38-.63.13-.25.06-.47-.03-.66-.09-.19-.85-2.05-1.17-2.81-.31-.75-.63-.65-.85-.66-.22-.01-.47-.01-.72-.01s-.66.09-.99.44c-.35.35-1.32 1.3-1.32 3.16 0 1.87 1.35 3.67 1.54 3.92.19.25 2.66 4.06 6.45 5.69.9.39 1.6.62 2.15.79.9.29 1.72.25 2.37.15.72-.11 2.24-.92 2.55-1.8.32-.88.32-1.63.22-1.8-.09-.17-.35-.26-.72-.45z"/></svg>
+                    <strong style="font-size:0.95rem;">Soporte Técnico</strong>
+                </div>
+                <button id="btn-close-wa-popup">&times;</button>
+            </div>
+            <p class="wa-popup-subtitle">Selecciona un técnico para chatear</p>
+            <div class="wa-contacts">
+                <a href="https://wa.me/51964972584?text=Hola%20necesito%20ayuda%20para%20el%20sistema%20SQLens" target="_blank" rel="noopener" class="wa-contact-item">
+                    <div class="wa-avatar" style="background: linear-gradient(135deg,#25d366,#128c7e);">T1</div>
+                    <div class="wa-contact-info">
+                        <div class="wa-contact-name">Técnico 1</div>
+                        <div class="wa-contact-number">+51 964 972 584</div>
+                    </div>
+                    <svg class="wa-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 32 32" fill="currentColor"><path d="M16 0C7.163 0 0 7.163 0 16c0 2.836.74 5.5 2.035 7.818L.053 31.179a1 1 0 0 0 1.218 1.218l7.361-1.982A15.94 15.94 0 0 0 16 32c8.837 0 16-7.163 16-16S24.837 0 16 0zm0 29c-2.56 0-4.98-.69-7.07-1.99l-.49-.3-5.1 1.37 1.37-5.1-.3-.49A13 13 0 1 1 16 29zm7.26-9.92c-.38-.19-2.24-1.1-2.58-1.23-.35-.13-.6-.19-.85.19-.25.38-.97 1.23-1.18 1.48-.22.25-.43.28-.81.09-.38-.19-1.61-.59-3.07-1.89-1.13-1.01-1.9-2.26-2.12-2.64-.22-.38-.02-.59.17-.77.17-.17.38-.43.57-.64.19-.22.25-.38.38-.63.13-.25.06-.47-.03-.66-.09-.19-.85-2.05-1.17-2.81-.31-.75-.63-.65-.85-.66-.22-.01-.47-.01-.72-.01s-.66.09-.99.44c-.35.35-1.32 1.3-1.32 3.16 0 1.87 1.35 3.67 1.54 3.92.19.25 2.66 4.06 6.45 5.69.9.39 1.6.62 2.15.79.9.29 1.72.25 2.37.15.72-.11 2.24-.92 2.55-1.8.32-.88.32-1.63.22-1.8-.09-.17-.35-.26-.72-.45z"/></svg>
+                </a>
+                <a href="https://wa.me/51988182681?text=Hola%20necesito%20ayuda%20para%20el%20sistema%20SQLens" target="_blank" rel="noopener" class="wa-contact-item">
+                    <div class="wa-avatar" style="background: linear-gradient(135deg,#34b7f1,#075e54);">T2</div>
+                    <div class="wa-contact-info">
+                        <div class="wa-contact-name">Técnico 2</div>
+                        <div class="wa-contact-number">+51 988 182 681</div>
+                    </div>
+                    <svg class="wa-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 32 32" fill="currentColor"><path d="M16 0C7.163 0 0 7.163 0 16c0 2.836.74 5.5 2.035 7.818L.053 31.179a1 1 0 0 0 1.218 1.218l7.361-1.982A15.94 15.94 0 0 0 16 32c8.837 0 16-7.163 16-16S24.837 0 16 0zm0 29c-2.56 0-4.98-.69-7.07-1.99l-.49-.3-5.1 1.37 1.37-5.1-.3-.49A13 13 0 1 1 16 29zm7.26-9.92c-.38-.19-2.24-1.1-2.58-1.23-.35-.13-.6-.19-.85.19-.25.38-.97 1.23-1.18 1.48-.22.25-.43.28-.81.09-.38-.19-1.61-.59-3.07-1.89-1.13-1.01-1.9-2.26-2.12-2.64-.22-.38-.02-.59.17-.77.17-.17.38-.43.57-.64.19-.22.25-.38.38-.63.13-.25.06-.47-.03-.66-.09-.19-.85-2.05-1.17-2.81-.31-.75-.63-.65-.85-.66-.22-.01-.47-.01-.72-.01s-.66.09-.99.44c-.35.35-1.32 1.3-1.32 3.16 0 1.87 1.35 3.67 1.54 3.92.19.25 2.66 4.06 6.45 5.69.9.39 1.6.62 2.15.79.9.29 1.72.25 2.37.15.72-.11 2.24-.92 2.55-1.8.32-.88.32-1.63.22-1.8-.09-.17-.35-.26-.72-.45z"/></svg>
+                </a>
+            </div>
+        </div>
+        <!-- Float Button -->
+        <button id="wa-toggle-btn">
+            <svg class="wa-btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="22" height="22" fill="white"><path d="M16 0C7.163 0 0 7.163 0 16c0 2.836.74 5.5 2.035 7.818L.053 31.179a1 1 0 0 0 1.218 1.218l7.361-1.982A15.94 15.94 0 0 0 16 32c8.837 0 16-7.163 16-16S24.837 0 16 0zm0 29c-2.56 0-4.98-.69-7.07-1.99l-.49-.3-5.1 1.37 1.37-5.1-.3-.49A13 13 0 1 1 16 29zm7.26-9.92c-.38-.19-2.24-1.1-2.58-1.23-.35-.13-.6-.19-.85.19-.25.38-.97 1.23-1.18 1.48-.22.25-.43.28-.81.09-.38-.19-1.61-.59-3.07-1.89-1.13-1.01-1.9-2.26-2.12-2.64-.22-.38-.02-.59.17-.77.17-.17.38-.43.57-.64.19-.22.25-.38.38-.63.13-.25.06-.47-.03-.66-.09-.19-.85-2.05-1.17-2.81-.31-.75-.63-.65-.85-.66-.22-.01-.47-.01-.72-.01s-.66.09-.99.44c-.35.35-1.32 1.3-1.32 3.16 0 1.87 1.35 3.67 1.54 3.92.19.25 2.66 4.06 6.45 5.69.9.39 1.6.62 2.15.79.9.29 1.72.25 2.37.15.72-.11 2.24-.92 2.55-1.8.32-.88.32-1.63.22-1.8-.09-.17-.35-.26-.72-.45z"/></svg>
+            <span class="wa-btn-text">Soporte</span>
+        </button>
     </div>
 
     <!-- Script Application -->

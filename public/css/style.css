@@ -508,7 +508,7 @@ pre.collapsed {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
-    z-index: 100;
+    z-index: 2000;
 }
 
 .modal-overlay.active {
@@ -1146,4 +1146,444 @@ pre.collapsed {
 
 [data-theme="dark"] .version-badge {
     background: rgba(255, 255, 255, 0.04);
+}
+
+/* ======================================
+   RESPONSIVE — MOBILE / TABLET
+   Solo se añaden reglas, NO se modifica nada existente
+   ====================================== */
+
+/* Hamburger: oculto en desktop */
+#btn-sidebar-toggle {
+    display: none;
+    flex-shrink: 0;
+    padding: 8px 10px;
+}
+
+/* Overlay backdrop del sidebar (oculto en desktop) */
+#sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(3px);
+    z-index: 199;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+#sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* ── Tablet (≤ 900px) ─────────────────── */
+@media (max-width: 900px) {
+    .search-bar {
+        width: 100%;
+    }
+
+    .top-header {
+        padding: 0 20px;
+        gap: 12px;
+    }
+}
+
+/* ── Mobile (≤ 768px) ─────────────────── */
+@media (max-width: 768px) {
+
+    /* Mostrar hamburger */
+    #btn-sidebar-toggle {
+        display: flex;
+    }
+
+    /* Body sin overflow-hidden para que funcione el scroll */
+    body {
+        overflow: auto;
+    }
+
+    /* Contenedor principal: una sola columna */
+    .app-container {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    /* Sidebar: overlay deslizable */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 270px;
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 200;
+        overflow-y: auto;
+        height: 100vh;
+    }
+
+    .sidebar.mobile-open {
+        transform: translateX(0);
+        box-shadow: 6px 0 24px rgba(0, 0, 0, 0.18);
+    }
+
+    /* Main ocupa todo el ancho */
+    .main-content {
+        width: 100%;
+        height: 100vh;
+    }
+
+    /* Header */
+    .top-header {
+        padding: 0 14px;
+        gap: 10px;
+        height: 64px;
+    }
+
+    /* Search bar: usa flex:1 para ceder espacio al hamburger sin desbordarse */
+    .search-bar {
+        flex: 1;
+        min-width: 0;       /* permite que flex la encoja */
+        width: auto;
+        padding: 6px 10px;
+        overflow: hidden;
+    }
+
+    /* El input dentro también debe poder encoger */
+    .search-bar input {
+        min-width: 0;
+        flex: 1;
+    }
+
+    /* En mobile ≤768px el botón IA se reduce a solo emoji */
+    #btn-smart-fallback {
+        font-size: 0;
+        padding: 6px 8px;
+        min-width: 32px;
+        flex-shrink: 0;
+    }
+    #btn-smart-fallback::before {
+        content: '🪄';
+        font-size: 0.95rem;
+    }
+
+    /* Content area */
+    .content-area {
+        padding: 16px;
+        gap: 14px;
+        height: calc(100vh - 64px);
+    }
+
+    /* Cards */
+    .query-card {
+        padding: 16px;
+    }
+
+    .card-title {
+        font-size: 1.05rem;
+    }
+
+    .card-actions {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    /* Modales */
+    .modal {
+        width: 95% !important;
+        padding: 20px !important;
+        max-height: 95vh;
+    }
+
+    .ai-modal {
+        width: 95% !important;
+    }
+
+    /* Chat bubble */
+    #chat-window {
+        width: calc(100vw - 28px);
+        right: 14px;
+        bottom: 80px;
+    }
+
+    #chat-toggle-btn {
+        width: 52px;
+        height: 52px;
+        padding: 0;
+        border-radius: 50%;
+        justify-content: center;
+    }
+
+    .chat-btn-text {
+        display: none;
+    }
+
+    /* Paginación compacta */
+    .pagination-wrapper {
+        padding: 16px 0 4px;
+    }
+
+    .page-btn {
+        min-width: 32px;
+        height: 32px;
+        font-size: 0.8rem;
+        padding: 0 8px;
+    }
+
+    .page-btn.nav-btn {
+        padding: 0 10px;
+    }
+
+    /* Version badge */
+    .version-badge {
+        font-size: 0.72rem;
+    }
+}
+
+/* ── Pequeño móvil (≤ 400px) ──────────── */
+@media (max-width: 400px) {
+    .sidebar {
+        width: 85vw;
+    }
+
+    .content-area {
+        padding: 12px;
+    }
+
+    .query-card {
+        padding: 12px;
+    }
+
+    .pagination-controls {
+        gap: 3px;
+    }
+}
+
+/* ── Muy estrecho (≤ 480px): ocultar botón IA del header ── */
+@media (max-width: 480px) {
+
+    /* Ocultar completamente el botón "Buscar con IA" en el header */
+    #btn-smart-fallback {
+        display: none;
+    }
+
+    /* Ocultar ícono de lupa para ganar espacio en el input */
+    .search-bar .search-icon {
+        display: none;
+    }
+
+    /* El input ocupa todo el ancho de la search bar */
+    .search-bar input {
+        width: 100%;
+    }
+
+    /* Header más compacto */
+    .top-header {
+        padding: 0 10px;
+        gap: 8px;
+    }
+
+    /* Hamburger más compacto */
+    #btn-sidebar-toggle {
+        padding: 6px 8px;
+    }
+}
+
+/* ======================================
+   WHATSAPP SUPPORT FLOATING BUTTON
+   ====================================== */
+#wa-support-container {
+    position: fixed;
+    bottom: 102px; /* 30px bottom + 56px height + 16px gap */
+    right: 30px;
+    z-index: 990;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+}
+
+/* Ocultar botón WA cuando el chat IA está abierto */
+body:has(#chat-window.active) #wa-support-container {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(15px);
+    pointer-events: none;
+}
+
+/* Float button */
+#wa-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 0 22px;
+    height: 52px;
+    background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+    color: #fff;
+    border: none;
+    border-radius: 30px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgba(37, 211, 102, 0.45);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    animation: wa-pulse 2.5s ease-in-out infinite;
+    letter-spacing: 0.3px;
+}
+
+#wa-toggle-btn:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 8px 28px rgba(37, 211, 102, 0.6);
+    animation: none;
+}
+
+@keyframes wa-pulse {
+    0%, 100% { box-shadow: 0 4px 18px rgba(37, 211, 102, 0.45); }
+    50%       { box-shadow: 0 4px 28px rgba(37, 211, 102, 0.75); }
+}
+
+.wa-btn-icon {
+    flex-shrink: 0;
+}
+
+/* Popup */
+#wa-popup {
+    display: none;
+    width: 290px;
+    padding: 18px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+    animation: wa-popup-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    transform-origin: bottom right;
+}
+
+#wa-popup.open {
+    display: block;
+}
+
+@keyframes wa-popup-in {
+    from { opacity: 0; transform: scale(0.85) translateY(10px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.wa-popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.wa-popup-header button {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: background 0.15s;
+}
+
+.wa-popup-header button:hover {
+    background: var(--hover-bg);
+}
+
+.wa-popup-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0 0 14px;
+}
+
+.wa-contacts {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.wa-contact-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+
+.wa-contact-item:hover {
+    background: rgba(37, 211, 102, 0.08);
+    border-color: rgba(37, 211, 102, 0.4);
+    transform: translateX(3px);
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.12);
+}
+
+.wa-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+    letter-spacing: 0;
+}
+
+.wa-contact-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.wa-contact-name {
+    font-weight: 700;
+    font-size: 0.88rem;
+    margin-bottom: 2px;
+}
+
+.wa-contact-number {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
+.wa-arrow {
+    color: #25d366;
+    flex-shrink: 0;
+}
+
+/* Mobile: solo ícono (sin texto) */
+@media (max-width: 768px) {
+    #wa-toggle-btn {
+        width: 52px;
+        height: 52px;
+        padding: 0;
+        border-radius: 50%;
+        justify-content: center;
+    }
+
+    .wa-btn-text {
+        display: none;
+    }
+
+    #ai-chat-container {
+        bottom: 20px;
+        right: 16px;
+    }
+
+    #wa-support-container {
+        bottom: 84px; /* 20px bottom + 52px height + 12px gap */
+        right: 16px;
+        left: auto;
+    }
+
+    #wa-popup {
+        width: calc(100vw - 32px);
+        max-width: 310px;
+    }
 }
