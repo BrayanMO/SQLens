@@ -12,6 +12,7 @@ const queriesRoutes = require('./routes/queries.routes');
 const searchRoutes = require('./routes/search.routes');
 const modulesRoutes = require('./routes/modules.routes');
 const posRoutes = require('./routes/pos.routes');
+const teamsRoutes = require('./routes/teams.routes');
 const errorHandler = require('./middleware/errorHandler');
 const authMiddleware = require('./middleware/auth');
 const { pool } = require('./db/pool');
@@ -66,6 +67,7 @@ app.use('/auth', authRoutes);
 app.use('/queries', authMiddleware, queriesRoutes);
 app.use('/modules', authMiddleware, modulesRoutes);
 app.use('/pos', authMiddleware, posRoutes);
+app.use('/teams', authMiddleware, teamsRoutes);
 app.use('/', authMiddleware, searchRoutes);
 
 // Global Error Handler

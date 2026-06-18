@@ -28,7 +28,8 @@ if (!localStorage.getItem('sqlens_token') && window.location.pathname !== '/logi
 
 let currentAiSuggestion = null;
 let allQueries = [];
-let allModules = []; 
+let allModules = [];
+let allTeams = [];   // ← equipos (L3, L2, QA, MC...)
 let currentFilterType = 'all';
 let currentFilterModule = 'all';
 
@@ -126,12 +127,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     const adminModulesList = document.getElementById('admin-modules-list');
     const moduleAdminForm = document.getElementById('module-admin-form');
 
+    const btnConfigToggle = document.getElementById('btn-config-toggle');
+    const configMenu = document.getElementById('config-menu');
+    const configChevron = document.getElementById('config-chevron');
     const btnPosDirectory = document.getElementById('btn-pos-directory');
     const posModal = document.getElementById('pos-modal');
     const btnClosePosModal = document.getElementById('btn-close-pos-modal');
     const posListContainer = document.getElementById('pos-list-container');
     const posAdminForm = document.getElementById('pos-admin-form');
     const adminPosList = document.getElementById('admin-pos-list');
+    
+    const teamAdminForm = document.getElementById('team-admin-form');
+    const adminTeamsList = document.getElementById('admin-teams-list');
     
     let allPOs = [];
 
@@ -146,6 +153,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 renderModuleSelector();
             }
         } catch (err) { console.error('Error fetching modules:', err); }
+    }
+
+    async function fetchTeams() {
+        try {
+            const res = await fetch('/teams');
+            const data = await res.json();
+            if (data.success) {
+                allTeams = data.data;
+            }
+        } catch (err) { console.error('Error fetching teams:', err); }
     }
 
     // Trae solo type+module de TODOS los registros (sin páginación) para el sidebar
@@ -347,86 +364,131 @@ document.addEventListener('DOMContentLoaded', async () => {
         accordionContainer.innerHTML = '';
 
         const typeGroups = [
-            { id: 'sql', title: '🗄️ Consultas SQL' },
-            { id: 'prompt', title: '✨ Prompts de IA' },
-            { id: 'note', title: '📝 Apuntes y Procesos' },
-            { id: 'sicc', title: '💻 SICC' },
-            { id: 'ods', title: '🗂️ ODS' },
-            { id: 'prol', title: '📊 PROL' },
-            { id: 'servicios', title: '🛠️ Servicios' },
-            { id: 'servidores', title: '🖥️ Servidores' },
-            { id: 'conexiones', title: '🔗 Conexiones' },
+            { id: 'sql',                 title: '🗄️ Consultas SQL' },
+            { id: 'prompt',              title: '✨ Prompts de IA' },
+            { id: 'note',                title: '📝 Apuntes y Procesos' },
+            { id: 'sicc',               title: '💻 SICC' },
+            { id: 'ods',                title: '🗂️ ODS' },
+            { id: 'prol',               title: '📊 PROL' },
+            { id: 'servicios',          title: '🛠️ Servicios' },
+            { id: 'servidores',         title: '🖥️ Servidores' },
+            { id: 'conexiones',         title: '🔗 Conexiones' },
             { id: 'usuarios_contrasenas', title: '🔑 Usuarios y Contraseñas' }
         ];
 
-        typeGroups.forEach(group => {
-            const divGroup = document.createElement('div');
-            divGroup.className = `accordion-group ${currentFilterType === group.id ? 'open' : ''}`;
-            
-            const header = document.createElement('div');
-            header.className = `accordion-header ${currentFilterType === group.id && currentFilterModule === 'all' ? 'active' : ''}`;
-            header.innerHTML = `
-                ${group.title}
-                <span class="accordion-toggle">▶</span>
-            `;
-            header.addEventListener('click', () => {
-                // Toggle open
-                const isOpen = divGroup.classList.contains('open');
-                document.querySelectorAll('.accordion-group').forEach(g => g.classList.remove('open'));
-                if (!isOpen) divGroup.classList.add('open');
+        // --- Render por equipo ---
+        allTeams.forEach(team => {
+            // Módulos que pertenecen a este equipo
+            const teamModules = allModules.filter(m => m.team_id === team.id);
+            // Tipos que tienen al menos un registro en algún módulo de este equipo
+            const relevantTypes = typeGroups.filter(group =>
+                allQueriesSummary.some(q => q.type === group.id && teamModules.some(m => m.name === q.module))
+            );
 
-                // Fetch ALL records of this type from the backend
-                currentFilterType = group.id;
-                currentFilterModule = 'all';
-                updateSidebarActiveStates();
-                loadFilteredQueries(group.id);
+            // Cabecera del equipo (siempre se muestra aunque esté vacío)
+            const teamSection = document.createElement('div');
+            teamSection.className = 'team-section';
+            teamSection.dataset.teamId = team.id;
+
+            const teamHeader = document.createElement('div');
+            teamHeader.className = 'team-header';
+            teamHeader.innerHTML = `
+                <div class="team-header-inner">
+                    <span class="team-icon" style="color:${team.color}">${team.icon}</span>
+                    <span class="team-name">${team.name}</span>
+                    <span class="team-badge" style="background:${team.color}22; color:${team.color}; border:1px solid ${team.color}44">${teamModules.length}</span>
+                </div>
+                <span class="team-chevron">▾</span>
+            `;
+
+            const teamBody = document.createElement('div');
+            teamBody.className = 'team-body';
+
+            // Toggle equipo
+            let isTeamOpen = false; // empieza cerrado
+            // NO agregar 'team-open' al cargar
+            teamHeader.addEventListener('click', () => {
+                isTeamOpen = !isTeamOpen;
+                teamSection.classList.toggle('team-open', isTeamOpen);
             });
 
-            const content = document.createElement('div');
-            content.className = 'accordion-content';
-            const ul = document.createElement('ul');
-
-            // Filtrar módulos usando el resumen COMPLETO (no solo la página actual)
-            const hasItems = allQueriesSummary.some(q => q.type === group.id);
-            const activeModulesForType = [...new Set(allQueriesSummary.filter(q => q.type === group.id).map(q => q.module))];
-
-            if (!hasItems) {
-                ul.innerHTML = '<li style="color: var(--text-secondary); font-size: 0.85rem; padding-left: 5px;">Ningún registro aún</li>';
+            if (relevantTypes.length === 0) {
+                // Sin registros en este equipo
+                const emptyMsg = document.createElement('div');
+                emptyMsg.className = 'team-empty';
+                emptyMsg.textContent = 'Sin registros aún';
+                teamBody.appendChild(emptyMsg);
             } else {
-                allModules.forEach(m => {
-                    // Si el módulo no tiene registros de este tipo, lo saltamos
-                    if (!activeModulesForType.includes(m.name)) return;
+                // Render acordeones de tipo dentro del equipo
+                relevantTypes.forEach(group => {
+                    const divGroup = document.createElement('div');
+                    divGroup.className = `accordion-group ${currentFilterType === group.id ? 'open' : ''}`;
 
-                    const li = document.createElement('li');
-                    const isActive = currentFilterType === group.id && currentFilterModule === m.name;
-                li.className = isActive ? 'active' : '';
-                li.dataset.module = m.name;
-                li.dataset.type = group.id;
-                
-                if (isActive) {
-                    li.style.borderRight = `4px solid ${m.color}`;
-                    li.style.background = `${m.color}10`;
-                }
+                    const header = document.createElement('div');
+                    header.className = `accordion-header ${currentFilterType === group.id && currentFilterModule === 'all' ? 'active' : ''}`;
+                    header.innerHTML = `
+                        ${group.title}
+                        <span class="accordion-toggle">▶</span>
+                    `;
+                    header.addEventListener('click', () => {
+                        const isOpen = divGroup.classList.contains('open');
+                        document.querySelectorAll('.accordion-group').forEach(g => g.classList.remove('open'));
+                        if (!isOpen) divGroup.classList.add('open');
 
-                li.innerHTML = `<span class="icon" style="background: ${m.color}15; color: ${m.color}; border-radius: 6px; padding: 4px; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; font-size: 1rem;">${decodeIcon(m.icon)}</span> <span>${m.name}</span>`;
-                
-                li.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    currentFilterType = group.id;
-                    currentFilterModule = m.name;
-                    updateSidebarActiveStates();
-                    // Fetch ALL records of this type+module from the backend
-                    loadFilteredQueries(group.id, m.name);
-                });
+                        currentFilterType = group.id;
+                        currentFilterModule = 'all';
+                        updateSidebarActiveStates();
+                        loadFilteredQueries(group.id);
+                    });
 
-                ul.appendChild(li);
+                    const content = document.createElement('div');
+                    content.className = 'accordion-content';
+                    const ul = document.createElement('ul');
+
+                    // Solo módulos de ESTE equipo con registros de este tipo
+                    const activeModulesForType = [...new Set(
+                        allQueriesSummary
+                            .filter(q => q.type === group.id && teamModules.some(m => m.name === q.module))
+                            .map(q => q.module)
+                    )];
+
+                    teamModules.forEach(m => {
+                        if (!activeModulesForType.includes(m.name)) return;
+
+                        const li = document.createElement('li');
+                        const isActive = currentFilterType === group.id && currentFilterModule === m.name;
+                        li.className = isActive ? 'active' : '';
+                        li.dataset.module = m.name;
+                        li.dataset.type = group.id;
+
+                        if (isActive) {
+                            li.style.borderRight = `4px solid ${m.color}`;
+                            li.style.background = `${m.color}10`;
+                        }
+
+                        li.innerHTML = `<span class="icon" style="background: ${m.color}15; color: ${m.color}; border-radius: 6px; padding: 4px; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; font-size: 1rem;">${decodeIcon(m.icon)}</span> <span>${m.name}</span>`;
+
+                        li.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            currentFilterType = group.id;
+                            currentFilterModule = m.name;
+                            updateSidebarActiveStates();
+                            loadFilteredQueries(group.id, m.name);
+                        });
+
+                        ul.appendChild(li);
+                    });
+
+                    content.appendChild(ul);
+                    divGroup.appendChild(header);
+                    divGroup.appendChild(content);
+                    teamBody.appendChild(divGroup);
                 });
             }
 
-            content.appendChild(ul);
-            divGroup.appendChild(header);
-            divGroup.appendChild(content);
-            accordionContainer.appendChild(divGroup);
+            teamSection.appendChild(teamHeader);
+            teamSection.appendChild(teamBody);
+            accordionContainer.appendChild(teamSection);
         });
 
         updateSidebarActiveStates();
@@ -471,29 +533,71 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    function renderModuleSelector() {
-        const select = document.getElementById('module');
-        if (select) select.innerHTML = allModules.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+    function renderTeamSelector() {
+        const teamSelect = document.getElementById('query_team');
+        if (!teamSelect) return;
+        teamSelect.innerHTML = allTeams.map(t =>
+            `<option value="${t.id}">${t.icon} ${t.name}</option>`
+        ).join('');
+        // Trigger module filter for the first team
+        filterModulesByTeam(parseInt(teamSelect.value));
     }
+
+    function filterModulesByTeam(teamId) {
+        const moduleSelect = document.getElementById('module');
+        if (!moduleSelect) return;
+        const filtered = allModules.filter(m => m.team_id === teamId);
+        if (filtered.length === 0) {
+            moduleSelect.innerHTML = '<option value="">-- Sin módulos en este equipo --</option>';
+        } else {
+            moduleSelect.innerHTML = filtered.map(m =>
+                `<option value="${m.name}">${decodeIcon(m.icon)} ${m.name}</option>`
+            ).join('');
+        }
+    }
+
+    function renderModuleSelector() {
+        // Populate the team selector first, then let it drive module filtering
+        renderTeamSelector();
+    }
+
 
     function renderAdminModulesList() {
         if (!adminModulesList) return;
-        adminModulesList.innerHTML = allModules.map(m => `
+        adminModulesList.innerHTML = allModules.map(m => {
+            const teamName = m.team_name || '—';
+            const teamColor = m.team_color || '#64748b';
+            return `
             <div class="module-admin-item">
                 <div class="module-info">
                     <div class="module-icon-preview" style="background: ${m.color}20; color: ${m.color}">${decodeIcon(m.icon)}</div>
-                    <div><strong>${m.name}</strong><div style="font-size: 0.8rem; color: var(--text-secondary)">Color: ${m.color}</div></div>
+                    <div>
+                        <strong>${m.name}</strong>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); display:flex; gap:8px; margin-top:2px;">
+                            <span>Color: ${m.color}</span>
+                            <span style="background:${teamColor}22; color:${teamColor}; border:1px solid ${teamColor}44; border-radius:4px; padding:1px 6px; font-weight:600;">${teamName}</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="module-admin-actions">
-                    <button class="btn text-btn btn-sm" onclick="editModuleInAdmin(${m.id}, '${m.name}', '${decodeIcon(m.icon)}', '${m.color}')">Editar</button>
+                    <button class="btn text-btn btn-sm" onclick="editModuleInAdmin(${m.id}, '${m.name}', '${decodeIcon(m.icon)}', '${m.color}', ${m.team_id || 'null'})">Editar</button>
                     <button class="btn text-btn btn-sm danger" onclick="deleteModuleInAdmin(${m.id})">Eliminar</button>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
     }
+    function renderAdminTeamSelect() {
+        const teamSelect = document.getElementById('admin-module-team');
+        if (!teamSelect) return;
+        teamSelect.innerHTML = allTeams.map(t =>
+            `<option value="${t.id}">${t.icon} ${t.name}</option>`
+        ).join('');
+    }
+
 
     const queryType = document.getElementById('query_type');
     const labelSqlQuery = document.getElementById('label-sql-query');
+
 
     if (queryType && labelSqlQuery) {
         queryType.addEventListener('change', (e) => {
@@ -519,10 +623,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('title').value = (query.title || '').toUpperCase();
             document.getElementById('context').value = query.context || '';
             document.getElementById('sql_query').value = query.sql_query || '';
-            const matchingModule = allModules.find(m => m.name.toLowerCase() === (query.module || '').toLowerCase());
-            document.getElementById('module').value = matchingModule ? matchingModule.name : 'otros';
             document.getElementById('dev').value = query.dev || '';
             document.getElementById('tags').value = query.tags ? query.tags.join(', ') : '';
+            // Pre-select team and filter modules accordingly
+            const matchingModule = allModules.find(m => m.name.toLowerCase() === (query.module || '').toLowerCase());
+            if (matchingModule && matchingModule.team_id) {
+                const teamSelect = document.getElementById('query_team');
+                if (teamSelect) {
+                    teamSelect.value = matchingModule.team_id;
+                    filterModulesByTeam(matchingModule.team_id);
+                }
+            }
+            document.getElementById('module').value = matchingModule ? matchingModule.name : '';
             if (queryType) {
                 queryType.value = query.type || 'sql';
                 queryType.dispatchEvent(new Event('change'));
@@ -531,6 +643,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             modalTitle.textContent = '✨ Agregar Registro';
             queryForm.reset();
             document.getElementById('query_id').value = '';
+            // Reset team select and re-filter modules for first team
+            renderTeamSelector();
             if (queryType) {
                 queryType.value = 'sql';
                 queryType.dispatchEvent(new Event('change'));
@@ -600,6 +714,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Now call Initial load
+    await fetchTeams();
     await fetchModules();
     await fetchPOs();
     await fetchQueriesSummary(); // Carga resumen completo para el sidebar
@@ -611,6 +726,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnCancelModal.addEventListener('click', closeModal);
     queryForm.addEventListener('submit', handleSaveQuery);
     btnCloseAiModal.addEventListener('click', () => aiModalOverlay.classList.remove('active'));
+
+    // Cuando el usuario cambia de equipo en el modal → filtrar módulos
+    const queryTeamSelect = document.getElementById('query_team');
+    if (queryTeamSelect) {
+        queryTeamSelect.addEventListener('change', (e) => {
+            filterModulesByTeam(parseInt(e.target.value));
+        });
+    }
 
     // --- Listeners estáticos del sidebar (registrados UNA SOLA VEZ) ---
     const btnFilterAll = document.getElementById('btn-filter-all');
@@ -832,7 +955,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    btnAdminModules.addEventListener('click', () => { adminModulesModal.classList.add('active'); renderAdminModulesList(); });
+    const btnSuggestTeam = document.getElementById('btn-suggest-team');
+    if (btnSuggestTeam) {
+        btnSuggestTeam.addEventListener('click', async () => {
+            const name = document.getElementById('admin-team-name').value;
+            if (!name) return;
+            btnSuggestTeam.textContent = '⏳';
+            try {
+                const res = await fetch('/suggest-module-metadata', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('admin-team-icon').value = data.data.icon;
+                    document.getElementById('admin-team-color').value = data.data.color;
+                }
+            } catch (err) {} finally { btnSuggestTeam.textContent = '✨'; }
+        });
+    }
+
+    if (btnAdminModules) {
+        btnAdminModules.addEventListener('click', () => {
+            adminModulesModal.classList.add('active');
+            renderAdminTeamSelect();
+            renderAdminModulesList();
+            renderAdminPOs();
+            renderAdminTeams();
+        });
+    }
+
     btnCloseAdminModal.addEventListener('click', () => { adminModulesModal.classList.remove('active'); moduleAdminForm.reset(); });
 
     // Config Tabs Logic
@@ -854,8 +1003,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
+    // Toggle Accordion de Configuración
+    if (btnConfigToggle && configMenu && configChevron) {
+        btnConfigToggle.addEventListener('click', () => {
+            const isExpanded = configMenu.style.display === 'flex';
+            configMenu.style.display = isExpanded ? 'none' : 'flex';
+            configChevron.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
+        });
+    }
+
     // PO Directory Logic
     function renderPOs() {
+        if (!posListContainer) return;
         posListContainer.innerHTML = allPOs.length === 0 ? '<div style="text-align:center; padding: 20px; color: var(--text-secondary);">No hay POs configurados</div>' : allPOs.map(item => `
             <div style="background: var(--input-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color);">
                 <h3 style="margin: 0 0 5px 0; color: var(--accent-blue); font-size: 1.1rem;">${escapeHtml(item.project_name)}</h3>
@@ -880,28 +1039,48 @@ document.addEventListener('DOMContentLoaded', async () => {
         `).join('');
     }
 
-    btnAdminModules.addEventListener('click', () => { 
-        adminModulesModal.classList.add('active'); 
-        renderAdminModulesList(); 
-        renderAdminPOs();
-    });
+    function renderAdminTeams() {
+        if (!adminTeamsList) return;
+        adminTeamsList.innerHTML = allTeams.map(item => `
+            <div class="module-admin-item">
+                <div class="module-info">
+                    <div class="module-icon-preview" style="background: ${item.color}20; color: ${item.color}">${decodeIcon(item.icon)}</div>
+                    <div>
+                        <strong>${escapeHtml(item.name)}</strong>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary)">Orden: ${item.position}</div>
+                    </div>
+                </div>
+                <div class="module-admin-actions">
+                    <button class="btn text-btn btn-sm" onclick="editTeamInAdmin(${item.id}, '${escapeHtml(item.name).replace(/'/g, "\\'")}', '${escapeHtml(decodeIcon(item.icon)).replace(/'/g, "\\'")}', '${item.color}', ${item.position})">Editar</button>
+                    <button class="btn text-btn btn-sm danger" onclick="deleteTeamInAdmin(${item.id})">Eliminar</button>
+                </div>
+            </div>
+        `).join('');
+    }
 
-    btnPosDirectory.addEventListener('click', () => {
-        renderPOs();
-        posModal.classList.add('active');
-    });
 
-    btnClosePosModal.addEventListener('click', () => {
-        posModal.classList.remove('active');
-    });
+    if (btnPosDirectory) {
+        btnPosDirectory.addEventListener('click', () => {
+            renderPOs();
+            posModal.classList.add('active');
+        });
+    }
+
+    if (btnClosePosModal) {
+        btnClosePosModal.addEventListener('click', () => {
+            posModal.classList.remove('active');
+        });
+    }
 
     moduleAdminForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const id = document.getElementById('admin-module-id').value;
+        const teamSelect = document.getElementById('admin-module-team');
         const payload = {
             name: document.getElementById('admin-module-name').value,
             icon: encodeIcon(document.getElementById('admin-module-icon').value),
-            color: document.getElementById('admin-module-color').value
+            color: document.getElementById('admin-module-color').value,
+            team_id: teamSelect && teamSelect.value ? parseInt(teamSelect.value) : null
         };
         try {
             const res = await fetch(id ? `/modules/${id}` : '/modules', { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -909,11 +1088,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (err) {}
     });
 
-    window.editModuleInAdmin = (id, name, icon, color) => {
+    window.editModuleInAdmin = (id, name, icon, color, teamId) => {
         document.getElementById('admin-module-id').value = id;
         document.getElementById('admin-module-name').value = name;
         document.getElementById('admin-module-icon').value = icon;
         document.getElementById('admin-module-color').value = color;
+        const teamSelect = document.getElementById('admin-module-team');
+        if (teamSelect && teamId) teamSelect.value = teamId;
     };
 
     window.deleteModuleInAdmin = async (id) => {
@@ -951,6 +1132,40 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const res = await fetch(`/pos/${id}`, { method: 'DELETE' });
                 if ((await res.json()).success) { await fetchPOs(); renderAdminPOs(); }
+            } catch (err) {}
+        }
+    };
+
+    if (teamAdminForm) {
+        teamAdminForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('admin-team-id').value;
+            const payload = {
+                name: document.getElementById('admin-team-name').value,
+                icon: encodeIcon(document.getElementById('admin-team-icon').value),
+                color: document.getElementById('admin-team-color').value,
+                position: parseInt(document.getElementById('admin-team-position').value) || 0
+            };
+            try {
+                const res = await fetch(id ? `/teams/${id}` : '/teams', { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if ((await res.json()).success) { teamAdminForm.reset(); document.getElementById('admin-team-id').value = ''; await fetchTeams(); renderAdminTeams(); renderTeamSelector(); renderAdminTeamSelect(); }
+            } catch (err) {}
+        });
+    }
+
+    window.editTeamInAdmin = (id, name, icon, color, position) => {
+        document.getElementById('admin-team-id').value = id;
+        document.getElementById('admin-team-name').value = name;
+        document.getElementById('admin-team-icon').value = icon;
+        document.getElementById('admin-team-color').value = color;
+        document.getElementById('admin-team-position').value = position;
+    };
+
+    window.deleteTeamInAdmin = async (id) => {
+        if (await showConfirm('¿Eliminar Equipo?', 'Esta acción no se puede deshacer.')) {
+            try {
+                const res = await fetch(`/teams/${id}`, { method: 'DELETE' });
+                if ((await res.json()).success) { await fetchTeams(); renderAdminTeams(); renderTeamSelector(); renderAdminTeamSelect(); }
             } catch (err) {}
         }
     };

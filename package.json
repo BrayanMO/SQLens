@@ -1,6 +1,6 @@
 {
   "name": "sqlens-api",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "SQL query management API for Support Level 3 analysts",
   "main": "src/server.js",
   "scripts": {

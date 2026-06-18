@@ -56,11 +56,30 @@ body {
     padding: 24px;
     display: flex;
     flex-direction: column;
-    gap: 30px;
+    gap: 16px;
     background-color: var(--surface-bg);
     border-right: 1px solid var(--border-color);
     z-index: 10;
+    overflow: hidden;
 }
+
+.sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+    width: 4px;
+}
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+
 
 .logo {
     display: flex;
@@ -125,9 +144,11 @@ nav li.active::after {
     display: flex;
     align-items: center;
     gap: 12px;
-    color: var(--text-primary);
-    font-weight: 600;
-    margin-bottom: 5px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+    padding-left: 24px;
 }
 
 .accordion-header:hover {
@@ -137,6 +158,7 @@ nav li.active::after {
 .accordion-header.active {
     background: #eff6ff;
     color: var(--accent-blue);
+    font-weight: 600;
 }
 
 .accordion-toggle {
@@ -167,6 +189,84 @@ nav li.active::after {
     border-left: 2px solid var(--border-color);
     padding-left: 10px;
 }
+
+/* Team Grouping in Sidebar */
+.team-section {
+    margin-bottom: 4px;
+}
+
+.team-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+    margin-bottom: 8px;
+}
+
+.team-header:hover {
+    background: var(--input-bg);
+}
+
+.team-header-inner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.team-icon {
+    font-size: 1.05rem;
+    line-height: 1;
+}
+
+.team-name {
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: var(--text-primary);
+}
+
+.team-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 20px;
+    line-height: 1.6;
+}
+
+.team-chevron {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    transition: transform 0.25s;
+}
+
+.team-section.team-open .team-chevron {
+    transform: rotate(180deg);
+}
+
+.team-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease-out;
+    padding-left: 4px;
+}
+
+.team-section.team-open .team-body {
+    max-height: 2000px;
+    transition: max-height 0.5s ease-in;
+}
+
+.team-empty {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+
 
 /* Module Badges */
 .module-badge {
@@ -1584,6 +1684,3 @@ body:has(#chat-window.active) #wa-support-container {
 
     #wa-popup {
         width: calc(100vw - 32px);
-        max-width: 310px;
-    }
-}
