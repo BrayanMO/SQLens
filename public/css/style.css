@@ -1077,7 +1077,7 @@ pre.collapsed {
     cursor: default;
 }
 
-.page-btn:disabled {
+.page-btn:disabled:not(.active) {
     opacity: 0.35;
     cursor: not-allowed;
 }
