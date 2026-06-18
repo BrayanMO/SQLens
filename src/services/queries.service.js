@@ -32,23 +32,41 @@ const createQuery = async (data) => {
 };
 
 /**
- * Retrieves paginated queries
+ * Retrieves paginated queries, with optional type/module filters.
+ * When filterType is provided, returns ALL matching records (no pagination).
  */
-const getQueries = async (page = 1, limit = 20) => {
+const getQueries = async (page = 1, limit = 20, filterType = null, filterModule = null) => {
+  const conditions = [];
+  const filterValues = [];
+  let paramIdx = 1;
+
+  if (filterType) {
+    conditions.push(`type = $${paramIdx++}`);
+    filterValues.push(filterType);
+  }
+  if (filterModule) {
+    conditions.push(`module = $${paramIdx++}`);
+    filterValues.push(filterModule);
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  // Count matching records
+  const countResult = await db.query(`SELECT COUNT(*) FROM queries ${whereClause}`, filterValues);
+  const total = parseInt(countResult.rows[0].count, 10);
+
   const offset = (page - 1) * limit;
+  const queryValues = [...filterValues, limit, offset];
+
   const text = `
     SELECT id, title, sql_query, context, tags, module, dev, type, is_favorite, created_at
     FROM queries
+    ${whereClause}
     ORDER BY is_favorite DESC, created_at DESC
-    LIMIT $1 OFFSET $2;
+    LIMIT $${paramIdx} OFFSET $${paramIdx + 1};
   `;
-  const values = [limit, offset];
-  
-  const result = await db.query(text, values);
-  
-  // Get total count for pagination metadata
-  const countResult = await db.query('SELECT COUNT(*) FROM queries');
-  const total = parseInt(countResult.rows[0].count, 10);
+
+  const result = await db.query(text, queryValues);
 
   return {
     data: result.rows,
@@ -143,11 +161,22 @@ const getKnownTablesSummary = async () => {
   return Array.from(tables).join(', ');
 };
 
+/**
+ * Returns a lightweight summary of all records (only type and module)
+ * Used to populate sidebar filters regardless of current pagination page
+ */
+const getQueriesSummary = async () => {
+  const text = 'SELECT type, module FROM queries ORDER BY created_at DESC';
+  const result = await db.query(text);
+  return result.rows;
+};
+
 module.exports = {
   createQuery,
   getQueries,
   getQueryById,
   updateQuery,
   deleteQuery,
-  getKnownTablesSummary
+  getKnownTablesSummary,
+  getQueriesSummary
 };

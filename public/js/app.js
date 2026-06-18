@@ -32,6 +32,14 @@ let allModules = [];
 let currentFilterType = 'all';
 let currentFilterModule = 'all';
 
+// --- Pagination state ---
+let currentPage = 1;
+let paginationMeta = { total: 0, page: 1, limit: 20, totalPages: 1 };
+const PAGE_LIMIT = 20;
+
+// --- Sidebar summary (ALL records, not paginated) ---
+let allQueriesSummary = [];
+
 // Helper for Hex Icons (Emojis)
 function decodeIcon(iconStr) {
     if (!iconStr) return '📁';
@@ -140,18 +148,49 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (err) { console.error('Error fetching modules:', err); }
     }
 
-    async function loadQueries() {
-        if (!queriesContainer) return;
-        queriesContainer.innerHTML = '<div class="spinner"></div>';
+    // Trae solo type+module de TODOS los registros (sin páginación) para el sidebar
+    async function fetchQueriesSummary() {
         try {
-            const res = await fetch(`${API_URL}queries`);
+            const res = await fetch('/queries/summary');
+            const data = await res.json();
+            if (data.success) {
+                allQueriesSummary = data.data;
+                renderModuleFilters();
+            }
+        } catch (err) { console.error('Error fetching summary:', err); }
+    }
+
+    async function loadQueries(page = 1) {
+        if (!queriesContainer) return;
+        currentPage = page;
+        queriesContainer.innerHTML = '<div class="loader-container"><div class="spinner"></div></div>';
+        try {
+            const res = await fetch(`${API_URL}queries?page=${page}&limit=${PAGE_LIMIT}`);
             const data = await res.json();
             allQueries = data.data || [];
-            renderModuleFilters(); // Re-renderizar filtros basados en las queries reales
+            paginationMeta = data.meta || { total: 0, page, limit: PAGE_LIMIT, totalPages: 1 };
+            // Solo actualiza el acordeón del sidebar, NO registra nuevos listeners
+            renderModuleFilters();
             renderQueries(allQueries);
-        } catch (error) { queriesContainer.innerHTML = 'Error cargando queries'; }
+        } catch (error) { queriesContainer.innerHTML = '<div style="text-align:center;color:var(--danger);padding:40px">❌ Error cargando registros</div>'; }
     }
     window.loadQueries = loadQueries;
+
+    // Carga TODOS los registros de un tipo/módulo desde el backend (sin paginación)
+    async function loadFilteredQueries(type, module = null) {
+        if (!queriesContainer) return;
+        queriesContainer.innerHTML = '<div class="loader-container"><div class="spinner"></div></div>';
+        try {
+            let url = `${API_URL}queries?type=${encodeURIComponent(type)}`;
+            if (module) url += `&module=${encodeURIComponent(module)}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            allQueries = data.data || [];
+            // Sin paginación para vistas filtradas
+            paginationMeta = { total: 0, page: 1, limit: 9999, totalPages: 1 };
+            renderQueries(allQueries);
+        } catch (error) { queriesContainer.innerHTML = '<div style="text-align:center;color:var(--danger);padding:40px">❌ Error cargando registros</div>'; }
+    }
 
     function renderQueries(queries) {
         if (!queriesContainer) return;
@@ -216,6 +255,90 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (window.Prism) {
             Prism.highlightAllUnder(queriesContainer);
         }
+
+        // Render pagination only when in 'all' mode (not filtered client-side)
+        renderPagination();
+    }
+
+    function renderPagination() {
+        // Remove existing pagination if any
+        const existingPagination = document.getElementById('pagination-wrapper');
+        if (existingPagination) existingPagination.remove();
+
+        // Only show pagination on full load (not on client-side filter or search)
+        if (currentFilterType !== 'all' || currentFilterModule !== 'all') return;
+        if (paginationMeta.totalPages <= 1) return;
+
+        const { page, totalPages, total, limit } = paginationMeta;
+        const from = (page - 1) * limit + 1;
+        const to = Math.min(page * limit, total);
+
+        const wrapper = document.createElement('div');
+        wrapper.id = 'pagination-wrapper';
+        wrapper.className = 'pagination-wrapper';
+
+        // Info text
+        const info = document.createElement('div');
+        info.className = 'pagination-info';
+        info.textContent = `Mostrando ${from}–${to} de ${total} registros`;
+        wrapper.appendChild(info);
+
+        // Controls
+        const controls = document.createElement('div');
+        controls.className = 'pagination-controls';
+
+        // Helper to create a page button
+        const makeBtn = (label, pageNum, extraClass = '') => {
+            const btn = document.createElement('button');
+            btn.className = `page-btn${extraClass ? ' ' + extraClass : ''}`;
+            btn.innerHTML = label;
+            if (pageNum !== null) {
+                btn.dataset.page = pageNum;
+                btn.addEventListener('click', () => loadQueries(pageNum));
+            }
+            return btn;
+        };
+
+        // Prev button
+        const prevBtn = makeBtn('‹', page - 1, 'nav-btn');
+        if (page <= 1) prevBtn.disabled = true;
+        controls.appendChild(prevBtn);
+
+        // Page number buttons with smart ellipsis
+        const getPageNumbers = (current, total) => {
+            const delta = 2;
+            const pages = [];
+            const left = Math.max(2, current - delta);
+            const right = Math.min(total - 1, current + delta);
+
+            pages.push(1);
+            if (left > 2) pages.push('...');
+            for (let i = left; i <= right; i++) pages.push(i);
+            if (right < total - 1) pages.push('...');
+            if (total > 1) pages.push(total);
+            return pages;
+        };
+
+        getPageNumbers(page, totalPages).forEach(p => {
+            if (p === '...') {
+                controls.appendChild(makeBtn('…', null, 'ellipsis'));
+            } else {
+                const btn = makeBtn(p, p);
+                if (p === page) {
+                    btn.classList.add('active');
+                    btn.disabled = true;
+                }
+                controls.appendChild(btn);
+            }
+        });
+
+        // Next button
+        const nextBtn = makeBtn('›', page + 1, 'nav-btn');
+        if (page >= totalPages) nextBtn.disabled = true;
+        controls.appendChild(nextBtn);
+
+        wrapper.appendChild(controls);
+        queriesContainer.appendChild(wrapper);
     }
 
     function renderModuleFilters() {
@@ -252,20 +375,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.querySelectorAll('.accordion-group').forEach(g => g.classList.remove('open'));
                 if (!isOpen) divGroup.classList.add('open');
 
-                // Filter by type but 'all' modules
+                // Fetch ALL records of this type from the backend
                 currentFilterType = group.id;
                 currentFilterModule = 'all';
                 updateSidebarActiveStates();
-                renderQueries(allQueries);
+                loadFilteredQueries(group.id);
             });
 
             const content = document.createElement('div');
             content.className = 'accordion-content';
             const ul = document.createElement('ul');
 
-            // Filtrar módulos que realmente tienen registros de este tipo
-            const hasItems = allQueries.some(q => q.type === group.id);
-            const activeModulesForType = [...new Set(allQueries.filter(q => q.type === group.id).map(q => q.module))];
+            // Filtrar módulos usando el resumen COMPLETO (no solo la página actual)
+            const hasItems = allQueriesSummary.some(q => q.type === group.id);
+            const activeModulesForType = [...new Set(allQueriesSummary.filter(q => q.type === group.id).map(q => q.module))];
 
             if (!hasItems) {
                 ul.innerHTML = '<li style="color: var(--text-secondary); font-size: 0.85rem; padding-left: 5px;">Ningún registro aún</li>';
@@ -292,7 +415,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     currentFilterType = group.id;
                     currentFilterModule = m.name;
                     updateSidebarActiveStates();
-                    renderQueries(allQueries);
+                    // Fetch ALL records of this type+module from the backend
+                    loadFilteredQueries(group.id, m.name);
                 });
 
                 ul.appendChild(li);
@@ -305,29 +429,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             accordionContainer.appendChild(divGroup);
         });
 
-        // Event listener for "Todos" button
-        const btnAll = document.getElementById('btn-filter-all');
-        if (btnAll) {
-            btnAll.addEventListener('click', () => {
-                currentFilterType = 'all';
-                currentFilterModule = 'all';
-                document.querySelectorAll('.accordion-group').forEach(g => g.classList.remove('open'));
-                updateSidebarActiveStates();
-                renderQueries(allQueries);
-            });
-        }
-        
-        // Event listener for "Favoritos" button
-        const btnFav = document.getElementById('btn-filter-favorites');
-        if (btnFav) {
-            btnFav.addEventListener('click', () => {
-                currentFilterType = 'favorites';
-                currentFilterModule = 'all';
-                document.querySelectorAll('.accordion-group').forEach(g => g.classList.remove('open'));
-                updateSidebarActiveStates();
-                renderQueries(allQueries);
-            });
-        }
         updateSidebarActiveStates();
     }
 
@@ -456,13 +557,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             const url = id ? `${API_URL}queries/${id}` : `${API_URL}queries`;
             const res = await fetch(url, { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
             const data = await res.json();
-            if (data.success) { closeModal(); loadQueries(); }
+            if (data.success) { closeModal(); fetchQueriesSummary(); loadQueries(currentPage); }
             else { modalError.textContent = data.error; }
         } catch (err) { alert('Error guardando'); }
     }
 
     async function performSearch(query) {
-        if (!query.trim()) return loadQueries();
+        if (!query.trim()) return loadQueries(1);
+        // Reset pagination meta so pagination bar disappears during search
+        paginationMeta = { total: 0, page: 1, limit: PAGE_LIMIT, totalPages: 1 };
         try {
             const res = await fetch(`${API_URL}search`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query }) });
             allQueries = (await res.json()).data || []; 
@@ -499,7 +602,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Now call Initial load
     await fetchModules();
     await fetchPOs();
-    loadQueries();
+    await fetchQueriesSummary(); // Carga resumen completo para el sidebar
+    loadQueries(1);
     
     // Setup listeners
     btnNewQuery.addEventListener('click', () => openModal());
@@ -507,6 +611,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnCancelModal.addEventListener('click', closeModal);
     queryForm.addEventListener('submit', handleSaveQuery);
     btnCloseAiModal.addEventListener('click', () => aiModalOverlay.classList.remove('active'));
+
+    // --- Listeners estáticos del sidebar (registrados UNA SOLA VEZ) ---
+    const btnFilterAll = document.getElementById('btn-filter-all');
+    if (btnFilterAll) {
+        btnFilterAll.addEventListener('click', () => {
+            currentFilterType = 'all';
+            currentFilterModule = 'all';
+            document.querySelectorAll('.accordion-group').forEach(g => g.classList.remove('open'));
+            updateSidebarActiveStates();
+            loadQueries(1);
+        });
+    }
+    const btnFilterFavorites = document.getElementById('btn-filter-favorites');
+    if (btnFilterFavorites) {
+        btnFilterFavorites.addEventListener('click', async () => {
+            currentFilterType = 'favorites';
+            currentFilterModule = 'all';
+            document.querySelectorAll('.accordion-group').forEach(g => g.classList.remove('open'));
+            updateSidebarActiveStates();
+            // Carga todos los favoritos desde el backend
+            queriesContainer.innerHTML = '<div class="loader-container"><div class="spinner"></div></div>';
+            try {
+                const res = await fetch(`${API_URL}queries?is_favorite=true&limit=9999`);
+                const data = await res.json();
+                allQueries = (data.data || []).filter(q => q.is_favorite);
+                paginationMeta = { total: 0, page: 1, limit: 9999, totalPages: 1 };
+                renderQueries(allQueries);
+            } catch (e) {}
+        });
+    }
 
     const titleInput = document.getElementById('title');
     if (titleInput) {
@@ -859,7 +993,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.deleteQuery = async (id) => { 
         if (await showConfirm('¿Eliminar Query?', 'Esta consulta se borrará permanentemente de tu repositorio.')) { 
             await fetch(`${API_URL}queries/${id}`, { method: 'DELETE' }); 
-            loadQueries(); 
+            fetchQueriesSummary();
+            loadQueries(currentPage); 
         } 
     };
 

@@ -60,6 +60,12 @@
                 <button id="btn-logout" class="btn text-btn" style="width: 100%; justify-content: flex-start; color: var(--danger);">
                     <span class="icon">🚪</span> Cerrar Sesión
                 </button>
+                <!-- Version Badge -->
+                <div class="version-badge">
+                    <span class="version-dot"></span>
+                    <span>SQLens</span>
+                    <span class="version-tag">v1.0</span>
+                </div>
             </div>
         </aside>
 
@@ -72,7 +78,7 @@
                     <button class="btn secondary" id="btn-smart-fallback" title="Buscar con IA si no hay resultados">🪄
                         Buscar con IA</button>
                     <button class="btn text-btn" id="btn-clear-search" style="display:none;"
-                        onclick="loadQueries(); document.getElementById('searchInput').value='';">✖</button>
+                        onclick="loadQueries(1); document.getElementById('searchInput').value='';">✖</button>
                 </div>
             </header>
 

@@ -25,9 +25,13 @@ const createQuery = asyncHandler(async (req, res) => {
 
 const getQueries = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page, 10) || 1;
-  const limit = parseInt(req.query.limit, 10) || 20;
+  const filterType = req.query.type || null;
+  const filterModule = req.query.module || null;
 
-  const result = await queriesService.getQueries(page, limit);
+  // When filtering by type, return all results (no pagination cap)
+  const limit = filterType ? 9999 : (parseInt(req.query.limit, 10) || 20);
+
+  const result = await queriesService.getQueries(page, limit, filterType, filterModule);
   res.status(200).json({
     success: true,
     data: result.data,
@@ -86,11 +90,17 @@ const updateQuery = asyncHandler(async (req, res) => {
   });
 });
 
+const getQueriesSummary = asyncHandler(async (req, res) => {
+  const rows = await queriesService.getQueriesSummary();
+  res.status(200).json({ success: true, data: rows });
+});
+
 module.exports = {
   createQuery,
   getQueries,
   getQueryById,
   updateQuery,
   deleteQuery,
+  getQueriesSummary,
   asyncHandler
 };

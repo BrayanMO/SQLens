@@ -5,6 +5,7 @@ const queriesController = require('../controllers/queries.controller');
 
 router.post('/', queriesController.createQuery);
 router.get('/', queriesController.getQueries);
+router.get('/summary', queriesController.getQueriesSummary); // ⚠️ debe ir ANTES de /:id
 router.get('/:id', queriesController.getQueryById);
 router.put('/:id', queriesController.updateQuery);
 router.delete('/:id', queriesController.deleteQuery);
