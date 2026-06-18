@@ -394,7 +394,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             teamHeader.className = 'team-header';
             teamHeader.innerHTML = `
                 <div class="team-header-inner">
-                    <span class="team-icon" style="color:${team.color}">${team.icon}</span>
+                    <span class="team-icon" style="color:${team.color}">${decodeIcon(team.icon)}</span>
                     <span class="team-name">${team.name}</span>
                     <span class="team-badge" style="background:${team.color}22; color:${team.color}; border:1px solid ${team.color}44">${teamModules.length}</span>
                 </div>
@@ -537,7 +537,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const teamSelect = document.getElementById('query_team');
         if (!teamSelect) return;
         teamSelect.innerHTML = allTeams.map(t =>
-            `<option value="${t.id}">${t.icon} ${t.name}</option>`
+            `<option value="${t.id}">${decodeIcon(t.icon)} ${t.name}</option>`
         ).join('');
         // Trigger module filter for the first team
         filterModulesByTeam(parseInt(teamSelect.value));
@@ -590,7 +590,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const teamSelect = document.getElementById('admin-module-team');
         if (!teamSelect) return;
         teamSelect.innerHTML = allTeams.map(t =>
-            `<option value="${t.id}">${t.icon} ${t.name}</option>`
+            `<option value="${t.id}">${decodeIcon(t.icon)} ${t.name}</option>`
         ).join('');
     }
 
