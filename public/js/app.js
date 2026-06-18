@@ -564,10 +564,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function renderAdminModulesList() {
         if (!adminModulesList) return;
-        adminModulesList.innerHTML = allModules.map(m => {
-            const teamName = m.team_name || '—';
-            const teamColor = m.team_color || '#64748b';
-            return `
+        
+        const grouped = {};
+        allModules.forEach(m => {
+            const tId = m.team_id || 'none';
+            if (!grouped[tId]) grouped[tId] = [];
+            grouped[tId].push(m);
+        });
+
+        let html = '';
+
+        const renderModuleItem = (m) => `
             <div class="module-admin-item">
                 <div class="module-info">
                     <div class="module-icon-preview" style="background: ${m.color}20; color: ${m.color}">${decodeIcon(m.icon)}</div>
@@ -575,7 +582,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <strong>${m.name}</strong>
                         <div style="font-size: 0.8rem; color: var(--text-secondary); display:flex; gap:8px; margin-top:2px;">
                             <span>Color: ${m.color}</span>
-                            <span style="background:${teamColor}22; color:${teamColor}; border:1px solid ${teamColor}44; border-radius:4px; padding:1px 6px; font-weight:600;">${teamName}</span>
                         </div>
                     </div>
                 </div>
@@ -584,7 +590,45 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <button class="btn text-btn btn-sm danger" onclick="deleteModuleInAdmin(${m.id})">Eliminar</button>
                 </div>
             </div>
-        `}).join('');
+        `;
+
+        allTeams.forEach(team => {
+            if (grouped[team.id] && grouped[team.id].length > 0) {
+                html += `
+                <div onclick="const content = this.nextElementSibling; const chevron = this.querySelector('.chevron'); if(content.style.display==='none'){content.style.display='block'; chevron.style.transform='rotate(180deg)';}else{content.style.display='none'; chevron.style.transform='rotate(0deg)';}" style="cursor: pointer; margin-top: 15px; margin-bottom: 10px; border-bottom: 2px solid ${team.color}40; padding-bottom: 5px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.2rem;">${decodeIcon(team.icon)}</span>
+                        <strong style="font-size: 1.1rem; color: var(--text-primary);">${team.name}</strong>
+                        <span style="background: ${team.color}20; color: ${team.color}; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold;">${grouped[team.id].length}</span>
+                    </div>
+                    <span class="chevron" style="transition: transform 0.3s; font-size: 0.9rem; color: var(--text-secondary);">▼</span>
+                </div>
+                <div style="display: none; padding-left: 10px; border-left: 2px solid ${team.color}20; margin-left: 10px;">
+                `;
+                html += grouped[team.id].map(renderModuleItem).join('');
+                html += `</div>`;
+                delete grouped[team.id];
+            }
+        });
+
+        const leftovers = Object.values(grouped).flat();
+        if (leftovers.length > 0) {
+            html += `
+            <div onclick="const content = this.nextElementSibling; const chevron = this.querySelector('.chevron'); if(content.style.display==='none'){content.style.display='block'; chevron.style.transform='rotate(180deg)';}else{content.style.display='none'; chevron.style.transform='rotate(0deg)';}" style="cursor: pointer; margin-top: 15px; margin-bottom: 10px; border-bottom: 2px solid var(--border-color); padding-bottom: 5px; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.2rem;">📁</span>
+                    <strong style="font-size: 1.1rem; color: var(--text-primary);">Sin Equipo</strong>
+                    <span style="background: var(--input-bg); color: var(--text-secondary); padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold;">${leftovers.length}</span>
+                </div>
+                <span class="chevron" style="transition: transform 0.3s; font-size: 0.9rem; color: var(--text-secondary);">▼</span>
+            </div>
+            <div style="display: none; padding-left: 10px; border-left: 2px solid var(--border-color); margin-left: 10px;">
+            `;
+            html += leftovers.map(renderModuleItem).join('');
+            html += `</div>`;
+        }
+
+        adminModulesList.innerHTML = html;
     }
     function renderAdminTeamSelect() {
         const teamSelect = document.getElementById('admin-module-team');
