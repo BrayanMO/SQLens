@@ -31,6 +31,7 @@ let allQueries = [];
 let allModules = [];
 let allTeams = [];   // ← equipos (L3, L2, QA, MC...)
 let currentFilterType = 'all';
+let currentFilterTeam = 'all';
 let currentFilterModule = 'all';
 
 // --- Pagination state ---
@@ -216,7 +217,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         const filtered = queries.filter(q => {
             if (currentFilterType === 'favorites') return q.is_favorite;
             const matchType = currentFilterType === 'all' || q.type === currentFilterType;
-            const matchModule = currentFilterModule === 'all' || q.module === currentFilterModule;
+            
+            let matchModule = false;
+            if (currentFilterModule === 'all') {
+                if (currentFilterTeam === 'all') {
+                    matchModule = true;
+                } else {
+                    const mod = allModules.find(m => m.name.toLowerCase() === (q.module || '').toLowerCase());
+                    matchModule = mod && mod.team_id === Number(currentFilterTeam);
+                }
+            } else {
+                matchModule = q.module === currentFilterModule;
+            }
+            
             return matchType && matchModule;
         });
 
@@ -436,6 +449,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         if (!isOpen) divGroup.classList.add('open');
 
                         currentFilterType = group.id;
+                        currentFilterTeam = team.id;
                         currentFilterModule = 'all';
                         updateSidebarActiveStates();
                         loadFilteredQueries(group.id);
@@ -471,6 +485,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         li.addEventListener('click', (e) => {
                             e.stopPropagation();
                             currentFilterType = group.id;
+                            currentFilterTeam = team.id;
                             currentFilterModule = m.name;
                             updateSidebarActiveStates();
                             loadFilteredQueries(group.id, m.name);
@@ -510,7 +525,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.querySelectorAll('.accordion-header:not(#btn-filter-all):not(#btn-filter-favorites)').forEach(header => {
             const groupDiv = header.closest('.accordion-group');
             const groupId = groupDiv.querySelector('li') ? groupDiv.querySelector('li').dataset.type : '';
-            if (currentFilterType === groupId && currentFilterModule === 'all') {
+            const teamSection = header.closest('.team-section');
+            const teamId = teamSection ? Number(teamSection.dataset.teamId) : null;
+            if (currentFilterType === groupId && currentFilterModule === 'all' && Number(currentFilterTeam) === teamId) {
                 header.classList.add('active');
             } else {
                 header.classList.remove('active');
@@ -518,7 +535,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         document.querySelectorAll('.accordion-content li').forEach(li => {
-            if (li.dataset.module === currentFilterModule && li.dataset.type === currentFilterType) {
+            const teamSection = li.closest('.team-section');
+            const teamId = teamSection ? Number(teamSection.dataset.teamId) : null;
+            if (li.dataset.module === currentFilterModule && li.dataset.type === currentFilterType && Number(currentFilterTeam) === teamId) {
                 li.classList.add('active');
                 const mData = allModules.find(m => m.name === currentFilterModule);
                 if(mData) {
@@ -715,7 +734,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             const url = id ? `${API_URL}queries/${id}` : `${API_URL}queries`;
             const res = await fetch(url, { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
             const data = await res.json();
-            if (data.success) { closeModal(); fetchQueriesSummary(); loadQueries(currentPage); }
+            if (data.success) { 
+                closeModal(); 
+                fetchQueriesSummary(); 
+                if (currentFilterType === 'all') {
+                    loadQueries(currentPage);
+                } else if (currentFilterType === 'favorites') {
+                    const btnFav = document.getElementById('btn-filter-favorites');
+                    if (btnFav) btnFav.click();
+                } else {
+                    loadFilteredQueries(currentFilterType, currentFilterModule === 'all' ? null : currentFilterModule);
+                }
+            }
             else { modalError.textContent = data.error; }
         } catch (err) { alert('Error guardando'); }
     }
@@ -784,6 +814,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btnFilterAll) {
         btnFilterAll.addEventListener('click', () => {
             currentFilterType = 'all';
+            currentFilterTeam = 'all';
             currentFilterModule = 'all';
             document.querySelectorAll('.accordion-group').forEach(g => g.classList.remove('open'));
             updateSidebarActiveStates();
@@ -794,6 +825,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btnFilterFavorites) {
         btnFilterFavorites.addEventListener('click', async () => {
             currentFilterType = 'favorites';
+            currentFilterTeam = 'all';
             currentFilterModule = 'all';
             document.querySelectorAll('.accordion-group').forEach(g => g.classList.remove('open'));
             updateSidebarActiveStates();
@@ -1253,7 +1285,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (await showConfirm('¿Eliminar Query?', 'Esta consulta se borrará permanentemente de tu repositorio.')) { 
             await fetch(`${API_URL}queries/${id}`, { method: 'DELETE' }); 
             fetchQueriesSummary();
-            loadQueries(currentPage); 
+            if (currentFilterType === 'all') {
+                loadQueries(currentPage); 
+            } else if (currentFilterType === 'favorites') {
+                const btnFav = document.getElementById('btn-filter-favorites');
+                if (btnFav) btnFav.click();
+            } else {
+                loadFilteredQueries(currentFilterType, currentFilterModule === 'all' ? null : currentFilterModule);
+            }
         } 
     };
 
